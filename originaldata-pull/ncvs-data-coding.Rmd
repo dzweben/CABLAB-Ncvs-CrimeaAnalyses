@@ -1,0 +1,366 @@
+---
+title: "Ncvs-rawdata-conversion"
+author: "Daniel Zweben"
+date: "2025-05-19"
+output: html_document
+---
+```{r}
+library(dplyr)
+library(readr)
+
+years <- 2014:2022
+input_dir <- "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/originaldata-pull/raw-ncvs-data/"
+output_file <- "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/originaldata-pull/coded_data/ncvs_2014_2022_incident_full.csv"
+
+get_var <- function(df, varname) {
+  if (varname %in% names(df)) return(df[[varname]])
+  else return(rep(NA, nrow(df)))
+}
+
+all_data <- list()
+
+for (yr in years) {
+  file_path <- paste0(input_dir, yr, ".csv")
+  if (!file.exists(file_path)) {
+    message(paste("Missing file:", file_path))
+    next
+  }
+
+  df <- read_csv(file_path, show_col_types = FALSE)
+  n <- nrow(df)
+
+  # Offender-related variables
+  one_or_more_offenders <- get_var(df, "V4234")
+  gender <- get_var(df, "V4236")
+  age_solo <- get_var(df, "V4237")
+  youngest_multiple <- get_var(df, "V4251")
+  oldest_multiple <- get_var(df, "V4252")
+  others_present <- get_var(df, "V4184")
+  others_help <- get_var(df, "V4185")
+  others_harm <- get_var(df, "V4194")
+  crimetype <- get_var(df, "V4529")
+
+  # Incident weight (unadjusted preferred, fallback to series-adjusted)
+  incident_weight <- get_var(df, "V4527")
+  if (all(is.na(incident_weight))) {
+    incident_weight <- get_var(df, "SERIES_IWEIGHT")
+  }
+
+  # Detect replicate weight prefix
+  prefix_candidates <- c("VICREPWGT", "SERIESVICREPWGT", "SERIESINCREPWGT", "SRWGT")
+  weight_prefix <- NA
+  for (prefix in prefix_candidates) {
+    test_vars <- paste0(prefix, 1:5)
+    if (all(test_vars %in% names(df))) {
+      weight_prefix <- prefix
+      break
+    }
+  }
+
+  # Extract and standardize replicate weights
+  replicate_weights <- list()
+  for (i in 1:160) {
+    source_name <- paste0(weight_prefix, i)
+    target_name <- paste0("VICREPWGT", i)
+    replicate_weights[[target_name]] <- if (source_name %in% names(df)) df[[source_name]] else rep(NA, n)
+  }
+
+  parsed <- tibble(
+    year = yr,
+    solo_group_crime = case_when(
+      one_or_more_offenders == 1 ~ "solo",
+      one_or_more_offenders == 2 ~ "group",
+      TRUE ~ NA_character_
+    ),
+    gender = gender,
+    age_solo = age_solo,
+    youngest_multiple = youngest_multiple,
+    oldest_multiple = oldest_multiple,
+    others_present = others_present,
+    others_help = others_help,
+    others_harm = others_harm,
+    crimetype = crimetype,
+    incident_weight = incident_weight
+  ) %>% bind_cols(as_tibble(replicate_weights))
+
+  all_data[[as.character(yr)]] <- parsed
+}
+
+# Combine all years and write output
+final_df <- bind_rows(all_data)
+write_csv(final_df, output_file)
+
+
+```
+
+
+```{r}
+final_df <- final_df %>%
+  mutate(
+    gender = recode(gender,
+                    `1` = "male",
+                    `2` = "female",
+                    `3` = NA_character_,
+                    `8` = NA_character_,
+                    `9` = NA_character_,
+                    .default = NA_character_),
+
+    age_solo = recode(age_solo,
+                      `1` = "Under 12",
+                      `2` = "12–14",
+                      `3` = "15–17",
+                      `4` = "18–20",
+                      `5` = "21–29",
+                      `6` = "30+",
+                      `8` = NA_character_,
+                      `9` = NA_character_,
+                      .default = NA_character_),
+
+    oldest_multiple = recode(oldest_multiple,
+                             `1` = "Under 12",
+                             `2` = "12–14",
+                             `3` = "15–17",
+                             `4` = "18–20",
+                             `5` = "21–29",
+                             `6` = "30+",
+                             `8` = NA_character_,
+                             `9` = NA_character_,
+                             .default = NA_character_),
+
+    youngest_multiple = recode(youngest_multiple,
+                               `1` = "Under 12",
+                               `2` = "12–14",
+                               `3` = "15–17",
+                               `4` = "18–20",
+                               `5` = "21–29",
+                               `6` = "30+",
+                               `8` = NA_character_,
+                               `9` = NA_character_,
+                               .default = NA_character_),
+
+    others_present = recode(others_present,
+                            `1` = "yes",
+                            `2` = "no",
+                            `3` = NA_character_,
+                            `8` = NA_character_,
+                            `9` = NA_character_,
+                            .default = NA_character_),
+
+    others_help = recode(others_help,
+                         `1` = "yes",
+                         `2` = "no",
+                         `3` = NA_character_,
+                         `8` = NA_character_,
+                         `9` = NA_character_,
+                         .default = NA_character_),
+
+    others_harm = recode(others_harm,
+                         `1` = "yes",
+                         `2` = "no",
+                         `3` = NA_character_,
+                         `8` = NA_character_,
+                         `9` = NA_character_,
+                         .default = NA_character_)
+  )
+
+
+```
+
+
+```{r}
+
+# Create a lookup table as a named vector
+crime_map <- c(
+  "1" = "Completed rape",
+  "2" = "Attempted rape",
+  "3" = "Sexual attack with serious assault",
+  "4" = "Sexual attack with minor assault",
+  "5" = "Completed robbery with injury from serious assault",
+  "6" = "Completed robbery with injury from minor assault",
+  "7" = "Completed robbery without injury from minor assault",
+  "8" = "Attempted robbery with injury from serious assault",
+  "9" = "Attempted robbery with injury from minor assault",
+  "10" = "Attempted robbery without injury",
+  "11" = "Completed aggravated assault with injury",
+  "12" = "Attempted aggravated assault with weapon",
+  "13" = "Threatened assault with weapon",
+  "14" = "Simple assault completed with injury",
+  "15" = "Sexual assault without injury",
+  "16" = "Unwanted sexual contact without force",
+  "17" = "Assault without weapon without injury",
+  "18" = "Verbal threat of rape",
+  "19" = "Verbal threat of sexual assault",
+  "20" = "Verbal threat of assault",
+  "21" = "Completed purse snatching",
+  "22" = "Attempted purse snatching",
+  "23" = "Pocket picking (completed only)",
+  "24" = "Completed personal larceny without contact less than $10",
+  "25" = "Completed personal larceny without contact $10 to $49",
+  "26" = "Completed personal larceny without contact $50 to $249",
+  "27" = "Completed personal larceny without contact $250 or greater",
+  "28" = "Completed personal larceny without contact value NA",
+  "29" = "Attempted personal larceny without contact",
+  "31" = "Completed burglary, forcible entry",
+  "32" = "Completed burglary, unlawful entry without force",
+  "33" = "Attempted forcible entry",
+  "34" = "Completed household larceny less than $10",
+  "35" = "Completed household larceny $10 to $49",
+  "36" = "Completed household larceny $50 to $249",
+  "37" = "Completed household larceny $250 or greater",
+  "38" = "Completed household larceny value NA",
+  "39" = "Attempted household larceny",
+  "40" = "Completed motor vehicle theft",
+  "41" = "Attempted motor vehicle theft",
+  "54" = "Completed theft less than $10",
+  "55" = "Completed theft $10 to $49",
+  "56" = "Completed theft $50 to $249",
+  "57" = "Completed theft $250 or greater",
+  "58" = "Completed theft value NA",
+  "59" = "Attempted Theft"
+)
+
+# Apply the mapping to the data
+final_df$crimetypespecific <- crime_map[as.character(as.integer(final_df$crimetype))]
+
+
+```
+
+
+```{r}
+final_df <- final_df %>%
+  mutate(
+    social_crime = case_when(
+      is.na(solo_group_crime) ~ NA_character_,
+      solo_group_crime == "group" ~ "group",
+      solo_group_crime == "solo" & others_present == "yes" & others_help != "yes" ~ "observed",
+      solo_group_crime == "solo" ~ "alone",
+      TRUE ~ NA_character_
+    )
+  )
+
+```
+
+
+```{r}
+final_df <- final_df %>%
+  mutate(
+    Social2 = case_when(
+      social_crime == "group" ~ "social",
+      social_crime == "observed" ~ "social",
+      social_crime == "alone" ~ "alone",
+      is.na(social_crime) ~ NA_character_,
+      TRUE ~ NA_character_
+  ))
+
+```
+
+##################### sometimes when it was a coeffense where there was only one age group, it was listed in both oldest_multiple and youngest_multiple
+but other times it was only listed in one column. If it was only in one column I put it in both just for consistency.
+
+This will help with the next step: ##################
+
+```{r}
+
+age_levels <- c("under_12", "12-14", "15-17", "18-20", "21-29", "30+")
+
+# Fix: If one is NA and the other is valid, copy the valid value over
+only_oldest <- is.na(final_df$youngest_multiple) & final_df$oldest_multiple %in% age_levels
+only_youngest <- is.na(final_df$oldest_multiple) & final_df$youngest_multiple %in% age_levels
+
+final_df$youngest_multiple[only_oldest] <- final_df$oldest_multiple[only_oldest]
+final_df$oldest_multiple[only_youngest] <- final_df$youngest_multiple[only_youngest]
+
+
+
+```
+
+
+```{r}
+# Updated property crime labels
+property_crimes <- c(
+  "Completed burglary, forcible entry",
+  "Completed burglary, unlawful entry without force",
+  "Attempted forcible entry",
+  "Completed motor vehicle theft",
+  "Attempted motor vehicle theft",
+  "Completed theft less than $10",
+  "Completed theft $10 to $49",
+  "Completed theft $50 to $249",
+  "Completed theft $250 or greater",
+  "Completed theft value NA",
+  "Attempted Theft",
+  "Completed household larceny less than $10",
+  "Completed household larceny $10 to $49",
+  "Completed household larceny $50 to $249",
+  "Completed household larceny $250 or greater",
+  "Completed household larceny value NA",
+  "Completed personal larceny without contact less than $10",
+  "Completed personal larceny without contact $10 to $49",
+  "Completed personal larceny without contact $50 to $249",
+  "Completed personal larceny without contact $250 or greater",
+  "Completed personal larceny without contact value NA",
+  "Attempted personal larceny without contact",
+  "Attempted household larceny",
+  "Pocket picking (completed only)"
+)
+
+# Updated nonfatal personal crimes
+nonfatal_personal_crimes <- c(
+  "Completed rape",
+  "Attempted rape",
+  "Sexual attack with serious assault",
+  "Sexual attack with minor assault",
+  "Completed robbery with injury from serious assault",
+  "Completed robbery with injury from minor assault",
+  "Completed robbery without injury from minor assault",
+  "Attempted robbery with injury from serious assault",
+  "Attempted robbery with injury from minor assault",
+  "Attempted robbery without injury",
+  "Completed aggravated assault with injury",
+  "Attempted aggravated assault with weapon",
+  "Threatened assault with weapon",
+  "Simple assault completed with injury",
+  "Sexual assault without injury",
+  "Unwanted sexual contact without force",
+  "Assault without weapon without injury",
+  "Verbal threat of rape",
+  "Verbal threat of sexual assault",
+  "Verbal threat of assault",
+  "Completed purse snatching",
+  "Attempted purse snatching"
+)
+
+# Remap crimetype
+final_df$crimetype <- case_when(
+  final_df$crimetypespecific %in% property_crimes ~ "Property Crime",
+  final_df$crimetypespecific %in% nonfatal_personal_crimes ~ "Nonfatal Personal Crimes",
+  TRUE ~ NA_character_
+)
+
+
+# Subset for property/theft crimes
+ncvs_theft <- final_df %>%
+  filter(crimetype == "Property Crime")
+
+# Subset for violent crimes
+ncvs_violent <- final_df %>%
+  filter(crimetype == "Nonfatal Personal Crimes")
+
+
+```
+
+
+```{r}
+write.csv(final_df, "~/Desktop/CABLAB_Files/ncvs/originaldata-pull/coded_data/ncvs-merged-data-2014-2022.csv", row.names = FALSE)
+
+write.csv(final_df, "~/Desktop/CABLAB_Files/ncvs/ncvs-merged-data-2014-2022.csv", row.names = FALSE)
+
+write.csv(ncvs_theft, "~/Desktop/CABLAB_Files/ncvs/theft-ncvs-merged-data-2014-2022.csv", row.names = FALSE)
+
+write.csv(ncvs_violent, "~/Desktop/CABLAB_Files/ncvs/violent-ncvs-merged-data-2014-2022.csv", row.names = FALSE)
+
+
+```
+
+
+

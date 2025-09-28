@@ -1,0 +1,894 @@
+---
+title: "ncvs checking"
+author: "Daniel Zweben"
+date: "2025-05-01"
+output: html_document
+---
+
+
+################ Read in the CSV as a DF ##############################
+
+```{r}
+ncvs_df <- read.csv("/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/ncvs-merged-data-2014-2022.csv")  # read CSV into dataframe
+
+```
+
+Remove negative "out of world from ncvs_df" weights
+```{r}
+# Clean base dataframe to exclude any invalid incident weights
+ncvs_df <- ncvs_df %>%
+  filter(!is.na(incident_weight), incident_weight > 0)
+
+```
+
+
+################ The OG NCVS document may have spaces before and after the charachters/values in each cell, so this removes them them 
+(for example for - a call in a column would be "under_12   " or "alone  "  or "observed " this will remove the spaces ##############################
+
+############### This script will also make it so all of the values in the original csv that read "N/A", instead of the values actual being blank (which R would register as NA) we convert the N/A calues to NA   ##############################
+
+```{r}
+# Trim whitespace from all character columns
+ncvs_df[] <- lapply(ncvs_df, function(col) {
+  if (is.character(col)) trimws(col) else col
+})
+
+#### convert N/A's to actual NA values. 
+ncvs_df[ncvs_df == "N/A"] <- NA
+
+
+
+```
+
+
+
+
+```{r}
+ncvs_df <- ncvs_df %>%
+  mutate(
+    age_solo = as.character(age_solo),
+    oldest_multiple = as.character(oldest_multiple),
+    youngest_multiple = as.character(youngest_multiple)
+  ) %>%
+  mutate(
+    age_solo = case_when(
+      age_solo == "Under 12" ~ "under_12",
+      age_solo == "12–14" ~ "12-14",
+      age_solo == "15–17" ~ "15-17",
+      age_solo == "18–20" ~ "18-20",
+      age_solo == "21–29" ~ "21-29",
+      TRUE ~ age_solo
+    ),
+    oldest_multiple = case_when(
+      oldest_multiple == "Under 12" ~ "under_12",
+      oldest_multiple == "12–14" ~ "12-14",
+      oldest_multiple == "15–17" ~ "15-17",
+      oldest_multiple == "18–20" ~ "18-20",
+      oldest_multiple == "21–29" ~ "21-29",
+      TRUE ~ oldest_multiple
+    ),
+    youngest_multiple = case_when(
+      youngest_multiple == "Under 12" ~ "under_12",
+      youngest_multiple == "12–14" ~ "12-14",
+      youngest_multiple == "15–17" ~ "15-17",
+      youngest_multiple == "18–20" ~ "18-20",
+      youngest_multiple == "21–29" ~ "21-29",
+      TRUE ~ youngest_multiple
+    )
+  )
+
+```
+
+##################### sometimes when it was a coeffense where there was only one age group, it was listed in both oldest_multiple and youngest_multiple
+but other times it was only listed in one column. If it was only in one column I put it in both just for consistency.
+
+This will help with the next step: ##################
+
+```{r}
+age_levels <- c("under_12", "12-14", "15-17", "18-20", "21-29", "30+")
+
+
+# Fix: If one is NA and the other is valid, copy the valid value over
+only_oldest <- is.na(ncvs_df$youngest_multiple) & ncvs_df$oldest_multiple %in% age_levels
+only_youngest <- is.na(ncvs_df$oldest_multiple) & ncvs_df$youngest_multiple %in% age_levels
+
+ncvs_df$youngest_multiple[only_oldest] <- ncvs_df$oldest_multiple[only_oldest]
+ncvs_df$oldest_multiple[only_youngest] <- ncvs_df$youngest_multiple[only_youngest]
+
+
+
+```
+
+```{r}
+ncvs_df <- ncvs_df %>%
+  mutate(year = as.numeric(as.character(year)))
+```
+
+#### Now I am checking how often there is a GAP between age groups for a given co-offense ()
+
+##### GAP reffers to at least 1 age category between the oldest and youngest listed
+Example: 
+Gap:
+At least one age group apart:
+Youngest offender: 18-20 oldest 30+
+No gap:
+Youngest: 18-20 oldest 20-30 (edited) 
+
+This can help inform our decision as to whether it would be reasonable to count coffenses towards both groups - given our concern that in some instances this  may ‘leave out’ age groups that are in between the oldest and youngest
+
+
+###
+
+```{r}
+library(dplyr)
+library(survey)
+
+# Define age levels and replicate weights
+age_levels <- c("under_12", "12-14", "15-17", "18-20", "21-29", "30+")
+rep_weight_names <- paste0("VICREPWGT", 1:160)
+
+# Filter to rows with valid weights and valid age combinations
+gapdf <- ncvs_df %>%
+  filter(
+    !is.na(VICREPWGT1),
+    incident_weight > 0,
+    oldest_multiple %in% age_levels,
+    youngest_multiple %in% age_levels
+  ) %>%
+  mutate(
+    oldest = factor(oldest_multiple, levels = age_levels, ordered = TRUE),
+    youngest = factor(youngest_multiple, levels = age_levels, ordered = TRUE),
+    age_diff = abs(as.numeric(oldest) - as.numeric(youngest)),
+    gap_2plus = ifelse(age_diff >= 2, 1, 0)
+  )
+
+# Create survey design using Fay's BRR method (required by NCVS)
+rep_design <- svrepdesign(
+  weights = ~incident_weight,
+  repweights = gapdf %>% select(all_of(rep_weight_names)),
+  type = "Fay",
+  rho = 0.3,
+  combined.weights = TRUE,
+  data = gapdf,
+  mse = TRUE
+)
+
+# Get frequency table of gap sizes (age_diff ≥ 2)
+gap_counts <- svytable(~age_diff, subset(rep_design, age_diff >= 2))
+gap_names <- paste0(names(gap_counts), " groups apart")
+
+# Get total and proportion
+gap_total <- svytotal(~gap_2plus, rep_design)
+gap_prop <- svymean(~gap_2plus, rep_design)
+
+# Format final APA-style output
+summary_df <- data.frame(
+  `Gap Size` = gap_names,
+  Frequency = as.integer(gap_counts)
+)
+
+summary_df <- rbind(
+  summary_df,
+  data.frame(`Gap Size` = "Total with Age Gap", Frequency = round(coef(gap_total))),
+  data.frame(`Gap Size` = "Proportion of Total", Frequency = round(coef(gap_prop), 4))
+)
+
+print(summary_df)
+
+
+```
+
+
+
+##co-offense pairing matrix: 
+# This script creates a table showing, for each age group, 
+# what percentage of their co-offenses were committed with 
+# people in each other age group.
+#
+# It uses the columns 'oldest_multiple' and 'youngest_multiple' 
+# to figure out who co-offended with whom, and counts both directions 
+# of each pair (e.g., 15–17 with 18–20 and 18–20 with 15–17).
+#
+# The result is a readable table where each row adds up to 100%, 
+# and all percentages include a % sign for clarity.
+
+```{r}
+# Load packages
+library(dplyr)
+library(survey)
+library(flextable)
+library(officer)
+
+# Define age levels and replicate weight columns
+age_levels <- c("under_12", "12-14", "15-17", "18-20", "21-29", "30+")
+rep_weight_names <- paste0("VICREPWGT", 1:160)
+
+# Filter and keep full rows with valid age groups and non-missing weights
+filtered_df <- ncvs_df %>%
+  filter(oldest_multiple %in% age_levels & youngest_multiple %in% age_levels) %>%
+  filter(!is.na(VICREPWGT1))
+
+# Duplicate rows with swapped age roles
+pair_df <- bind_rows(
+  filtered_df %>% rename(offender = oldest_multiple, co_with = youngest_multiple),
+  filtered_df %>% rename(offender = youngest_multiple, co_with = oldest_multiple)
+)
+
+# Ensure offender/co_with are factors with consistent levels
+pair_df <- pair_df %>%
+  mutate(
+    offender = factor(offender, levels = age_levels),
+    co_with = factor(co_with, levels = age_levels)
+  )
+
+# Create survey design using Fay's BRR method (required by NCVS)
+rep_weights <- paste0("VICREPWGT", 1:160)
+rep_design <- svrepdesign(
+  weights = ~incident_weight,
+  repweights = pair_df %>% select(all_of(rep_weights)),
+  type = "Fay",
+  rho = 0.3,
+  combined.weights = TRUE,
+  data = pair_df,
+  mse = TRUE
+)
+# Calculate weighted co-occurrence table
+tab <- svytable(~offender + co_with, design = rep_design)
+
+# Format full matrix
+tab <- tab[age_levels, age_levels]
+tab_matrix <- as.matrix(tab)
+row_totals <- rowSums(tab_matrix)
+pair_percents <- sweep(tab_matrix, 1, row_totals, FUN = "/") * 100
+pair_percents[is.nan(pair_percents)] <- NA
+
+# Label as percentages
+pair_percent_labels <- apply(pair_percents, c(1, 2), function(x) {
+  if (is.na(x)) "—" else paste0(round(x, 1), "%")
+})
+
+# Format output
+ncvs_pairing_df <- as.data.frame.matrix(pair_percent_labels)
+ncvs_pairing_df <- cbind(`Offender Age` = rownames(ncvs_pairing_df), ncvs_pairing_df)
+rownames(ncvs_pairing_df) <- NULL
+ncvs_pairing_df <- ncvs_pairing_df[, c("Offender Age", age_levels)]
+
+# APA-style flextable
+apa_table <- flextable(ncvs_pairing_df) |>
+  autofit() |>
+  fontsize(size = 11, part = "all") |>
+  font(fontname = "Times New Roman", part = "all") |>
+  set_table_properties(layout = "autofit") |>
+  border_remove() |>
+  border(i = 1, border.top = fp_border(color = "black", width = 1)) |>
+  border(i = nrow(ncvs_pairing_df), border.bottom = fp_border(color = "black", width = 1)) |>
+  line_spacing(space = 1.15, part = "body")
+
+# Export CSV
+write.csv(ncvs_pairing_df,
+          file = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/R_Tables/cooffense_pairing_matrix.csv",
+          row.names = FALSE)
+
+
+```
+
+
+
+# Expand offender-level age coding:
+# - For solo crimes: use 'age_solo' as the offender age
+# - For group crimes:
+#     - If youngest and oldest offenders are the same age group, use that age once
+#     - If youngest and oldest differ, duplicate the row so each age is counted once
+# This creates a unified 'age' variable, allowing proper age-based analysis across all incidents
+
+```{r}
+library(dplyr)
+
+ncvs_df <- ncvs_df %>%
+  mutate(
+    solo_flag = !is.na(age_solo),
+    same_group_age = youngest_multiple == oldest_multiple & !is.na(youngest_multiple),
+    two_group_ages = youngest_multiple != oldest_multiple & !is.na(youngest_multiple) & !is.na(oldest_multiple)
+  )
+
+# Solo offenders
+solo_df <- ncvs_df %>%
+  filter(solo_flag) %>%
+  mutate(age = age_solo)
+
+# Group crimes with matching age groups (no need to duplicate)
+same_age_df <- ncvs_df %>%
+  filter(!solo_flag & same_group_age) %>%
+  mutate(age = youngest_multiple)
+
+# Group crimes with different age groups — duplicate
+different_age_df <- ncvs_df %>%
+  filter(!solo_flag & two_group_ages)
+
+youngest_rows <- different_age_df %>%
+  mutate(age = youngest_multiple)
+
+oldest_rows <- different_age_df %>%
+  mutate(age = oldest_multiple)
+
+# Combine all into updated ncvs_df
+ncvs_df <- bind_rows(solo_df, same_age_df, youngest_rows, oldest_rows) %>%
+  select(-solo_flag, -same_group_age, -two_group_ages)
+
+```
+
+
+
+# ------------------------------------------------------------------------------
+# This section creates a summary table (ncvs_calc_1) showing counts by age group 
+# for three crime types:
+# - group: from age_cooffense where solo_group_crime == "group"
+# - alone: solo cases where others_help == "yes" or NA
+# - observed: solo cases with others_present == "yes" and others_help == "no"
+#
+# The final output is a summary table with total counts for each crime type
+# across six age groups, plus a total row at the bottom.
+
+# ------------------------------------------------------------------------------
+
+```{r}
+# Load required packages
+if (!require("survey")) install.packages("survey")
+if (!require("flextable")) install.packages("flextable")
+if (!require("officer")) install.packages("officer")
+library(survey)
+library(flextable)
+library(officer)
+library(dplyr)
+
+# Define valid age group levels and replicate weight names
+age_levels <- c("under_12", "12-14", "15-17", "18-20", "21-29", "30+")
+rep_weight_names <- paste0("VICREPWGT", 1:160)
+
+# Step 1: Clean and annotate the dataset
+filtered_df <- ncvs_df %>%
+  filter(!is.na(VICREPWGT1)) %>%
+  filter(age %in% age_levels) %>%
+  mutate(
+    is_alone = social_crime == "alone",
+    is_observed = social_crime == "observed"
+  )
+
+# Create survey design using Fay's BRR method (required by NCVS)
+rep_weights <- paste0("VICREPWGT", 1:160)
+rep_design <- svrepdesign(
+  weights = ~incident_weight,
+  repweights = filtered_df %>% select(all_of(rep_weights)),
+  type = "Fay",
+  rho = 0.3,
+  combined.weights = TRUE,
+  data = filtered_df,
+  mse = TRUE
+)
+
+# Step 3: Function to compute weighted totals by age group and condition
+weighted_total_by_age <- function(condition_expr, design, age_levels) {
+  design_sub <- subset(design, eval(condition_expr))
+  svytotal(~factor(age, levels = age_levels), design_sub) |> coef() |> as.numeric()
+}
+
+# Step 4: Compute weighted counts for each crime type
+alone_counts    <- weighted_total_by_age(quote(is_alone), rep_design, age_levels)
+observed_counts <- weighted_total_by_age(quote(is_observed), rep_design, age_levels)
+group_counts    <- weighted_total_by_age(quote(solo_group_crime == "group"), rep_design, age_levels)
+
+# Step 5: Combine results into a summary table
+ncvs_calc_1 <- data.frame(
+  age_group = age_levels,
+  alone     = round(alone_counts),
+  group     = round(group_counts),
+  observed  = round(observed_counts)
+)
+
+# Step 6: Add grand total column and total row
+ncvs_calc_1$grand_total <- rowSums(ncvs_calc_1[, c("alone", "group", "observed")], na.rm = TRUE)
+
+total_row <- data.frame(
+  age_group   = "Total",
+  alone       = sum(ncvs_calc_1$alone),
+  group       = sum(ncvs_calc_1$group),
+  observed    = sum(ncvs_calc_1$observed),
+  grand_total = sum(ncvs_calc_1$grand_total)
+)
+
+ncvs_calc_1 <- rbind(ncvs_calc_1, total_row)
+
+# Step 7: Format APA-style flextable
+ft <- flextable(ncvs_calc_1) |>
+  autofit() |>
+  theme_booktabs() |>
+  align(j = 2:5, align = "center", part = "all") |>
+  set_header_labels(
+    age_group = "Age Group",
+    alone = "Alone",
+    group = "Group",
+    observed = "Observed",
+    grand_total = "Total"
+  )
+
+# Step 8: Export to Word document
+save_as_docx(
+  "Table X. Weighted Distribution of Crime Involvement by Age Group" = ft,
+  path = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/R_Tables/combinedco_ncvs_calc_1_table.docx"
+)
+
+
+```
+
+
+
+# This script takes the ncvs_calc_1 table of crime involvement counts 
+# (alone, group, observed, grand_total by age group), 
+# and calculates the percentage of each type of involvement 
+# relative to the total number of crimes for that age group.
+#
+# The result is a new table, ncvs_calc_1_percentages, 
+# showing what percentage of each age group’s total crime involvement 
+# falls into the alone, group, or observed categories.
+
+
+```{r}
+# Load required packages
+library(flextable)
+library(officer)
+
+# Drop the total row
+ncvs_calc_1_no_total <- ncvs_calc_1[ncvs_calc_1$age_group != "Total", ]
+
+# Compute weighted percentages
+ncvs_calc_1_percentages <- ncvs_calc_1_no_total
+ncvs_calc_1_percentages[, c("alone", "group", "observed")] <- round(
+  ncvs_calc_1_no_total[, c("alone", "group", "observed")] /
+    ncvs_calc_1_no_total$grand_total * 100, 1
+)
+
+# Add % symbols
+ncvs_calc_1_percentages[, c("alone", "group", "observed")] <- apply(
+  ncvs_calc_1_percentages[, c("alone", "group", "observed")],
+  c(1, 2),
+  function(x) paste0(x, "%")
+)
+
+# Select only relevant columns
+ncvs_calc_1_percentages <- ncvs_calc_1_percentages[, c("age_group", "alone", "group", "observed")]
+
+# Create formatted APA table
+ft <- flextable(ncvs_calc_1_percentages) |> 
+  theme_booktabs() |> 
+  autofit() |> 
+  align(j = 2:4, align = "center", part = "all") |> 
+  set_header_labels(
+    age_group = "Age Group",
+    alone = "Alone (%)",
+    group = "Group (%)",
+    observed = "Observed (%)"
+  )
+
+# Save to Word doc
+save_as_docx(
+  "Table X. Proportion of Crime Types by Age Group (Weighted)" = ft,
+  path = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/R_Tables/combinedco-ncvs_percentages_table.docx"
+)
+
+
+```
+
+
+# This script tests whether the proportion of crimes that were committed "alone"
+# (out of each age group’s total crime involvement) differs significantly across age groups.
+# Roa-Scott Chi Squared: 
+
+
+
+
+```{r}
+library(survey)
+library(dplyr)
+library(purrr)
+library(tibble)
+library(flextable)
+library(officer)
+
+# Define age group levels
+age_levels <- c("under_12", "12-14", "15-17", "18-20", "21-29", "30+")
+
+# Prepare base dataset
+chi_df <- ncvs_df %>%
+  filter(!is.na(age), solo_group_crime %in% c("solo", "group")) %>%
+  mutate(
+    age = factor(age, levels = age_levels),
+    is_solo = factor(ifelse(solo_group_crime == "solo", "Solo", "Group"),
+                     levels = c("Group", "Solo"))
+  )
+
+# Create survey design using Fay's BRR method (required by NCVS)
+rep_weights <- paste0("VICREPWGT", 1:160)
+rep_design <- svrepdesign(
+  weights = ~incident_weight,
+  repweights = chi_df %>% select(all_of(rep_weights)),
+  type = "Fay",
+  rho = 0.3,
+  combined.weights = TRUE,
+  data = chi_df,
+  mse = TRUE
+)
+
+# ----- OMNIBUS -----
+rs_test <- svychisq(~is_solo + age, design = rep_design, statistic = "F")
+omnibus_row <- tibble(
+  `Age Group 1` = "ALL",
+  `Age Group 2` = "vs. all",
+  `F (Rao–Scott)` = round(rs_test$statistic, 3),
+  `df` = rs_test$parameter[1],
+  `Phi` = "",
+  `p` = formatC(rs_test$p.value, format = "f", digits = 4),
+  `p (Bonferroni)` = ""
+)
+
+# ----- PAIRWISE -----
+age_pairs <- combn(age_levels, 2, simplify = FALSE)
+
+run_pairwise_test <- function(pair, design) {
+  subset_design <- subset(design, age %in% pair)
+  subset_design$variables <- subset_design$variables %>%
+    mutate(
+      age = factor(age, levels = pair),
+      is_solo = factor(is_solo, levels = c("Group", "Solo"))
+    )
+  tryCatch({
+    stat <- svychisq(~is_solo + age, subset_design, statistic = "F")
+    tibble(
+      `Age Group 1` = pair[1],
+      `Age Group 2` = pair[2],
+      `F (Rao–Scott)` = round(stat$statistic, 3),
+      `df` = stat$parameter[1],
+      `Phi` = "",
+      `p_raw` = stat$p.value
+    )
+  }, error = function(e) {
+    tibble(
+      `Age Group 1` = pair[1],
+      `Age Group 2` = pair[2],
+      `F (Rao–Scott)` = NA,
+      `df` = 1,
+      `Phi` = "",
+      `p_raw` = NA_real_
+    )
+  })
+}
+
+# Run pairwise tests
+pairwise_results <- map_dfr(age_pairs, run_pairwise_test, design = rep_design)
+
+# Format and Bonferroni correct
+pairwise_results <- pairwise_results %>%
+  mutate(
+    `p` = formatC(p_raw, format = "f", digits = 4),
+    `p (Bonferroni)` = formatC(pmin(p_raw * n(), 1), format = "f", digits = 4)
+  ) %>%
+  arrange(desc(`F (Rao–Scott)`), as.numeric(p_raw)) %>%
+  select(-p_raw)
+
+# Combine with omnibus row
+final_table <- bind_rows(omnibus_row, pairwise_results)
+
+# Create flextable
+ft <- flextable(final_table) |>
+  autofit() |>
+  theme_booktabs() |>
+  align(align = "center", part = "all") |>
+  bold(i = 1, bold = TRUE) |>
+  set_header_labels(
+    `Age Group 1` = "Age Group 1",
+    `Age Group 2` = "Age Group 2",
+    `F (Rao–Scott)` = "F (Rao–Scott)",
+    `df` = "df",
+    `Phi` = "Phi",
+    `p` = "p",
+    `p (Bonferroni)` = "p (Bonferroni)"
+  )
+
+# Save to Word
+save_as_docx(
+  "Table X. Rao–Scott F-Adjusted Tests of Solo Crime Differences by Age Group" = ft,
+  path = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/R_Tables/combinedco-chi_squared_table.docx"
+)
+
+```
+
+
+# This logistic regression models the likelihood of a crime being committed "alone"
+# as a function of age group, using weighted data........:D
+#
+# The reference group is set to "15–17" to represent teens, allowing us to interpret 
+# how other age groups differ in their odds of committing solo crimes compared to teens.
+#
+# The outcome is modeled as a binomial proportion: (alone vs. not alone),
+# and the results are presented as odds ratios (OR), along with 95% confidence intervals
+# and p-values. An odds ratio >1 means that group is more likely to commit crimes alone
+# than 15–17-year-olds, while OR <1 means they are less likely.
+
+
+```{r}
+# -------------------------------
+# 0. Load Required Packages
+# -------------------------------
+if (!require("survey")) install.packages("survey")
+if (!require("broom")) install.packages("broom")
+if (!require("flextable")) install.packages("flextable")
+if (!require("officer")) install.packages("officer")
+library(survey)
+library(broom)
+library(flextable)
+library(officer)
+library(dplyr)
+
+# -------------------------------
+# 1. Define Age Levels and Weights
+# -------------------------------
+age_levels <- c("15-17", "under_12", "12-14", "18-20", "21-29", "30+")
+rep_weight_names <- paste0("VICREPWGT", 1:160)
+
+# -------------------------------
+# 2. Prepare Dataset
+# (Assumes 'age' is already constructed)
+# -------------------------------
+full_df <- ncvs_df %>%
+  filter(age %in% age_levels, social_crime %in% c("alone", "observed", "group")) %>%
+  filter(!is.na(incident_weight), !is.na(VICREPWGT1)) %>%
+  mutate(
+    age_group = factor(age, levels = age_levels),
+    is_alone = social_crime == "alone"
+  )
+
+# -------------------------------
+# 3. Create Survey Design (Fay’s BRR)
+# -------------------------------
+rep_design <- svrepdesign(
+  weights = ~incident_weight,
+  repweights = full_df %>% select(all_of(rep_weight_names)),
+  type = "Fay",
+  rho = 0.3,
+  combined.weights = TRUE,
+  data = full_df,
+  mse = TRUE
+)
+
+# -------------------------------
+# 4. Logistic Regression: Alone ~ Age Group
+# -------------------------------
+options(survey.replicates.mse = TRUE)
+
+model <- svyglm(is_alone ~ age_group, design = rep_design, family = binomial())
+
+# -------------------------------
+# 5. Tidy and Format Output
+# -------------------------------
+model_output <- tidy(model, conf.int = TRUE, exponentiate = TRUE) %>%
+  mutate(term = ifelse(term == "(Intercept)", "Intercept (15–17)", term)) %>%
+  mutate(across(where(is.numeric), ~ round(., 2))) %>%
+  rename(
+    `Age Group` = term,
+    `Odds Ratio` = estimate,
+    `Std. Error` = std.error,
+    `z` = statistic,
+    `p` = p.value,
+    `CI Lower` = conf.low,
+    `CI Upper` = conf.high
+  )
+
+# -------------------------------
+# 6. Create APA-style Flextable
+# -------------------------------
+ft <- flextable(model_output) |>
+  autofit() |>
+  theme_booktabs() |>
+  set_table_properties(layout = "autofit") |>
+  fontsize(size = 11, part = "all") |>
+  line_spacing(space = 1.15)
+
+# -------------------------------
+# 7. Save as Word Document
+# -------------------------------
+save_as_docx(
+  "Logistic Regression Results (Solo Offending by Age Group)" = ft,
+  path = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/R_tables/Combinedcof-15-17int-logistic_regression_solo_offending.docx"
+)
+
+
+```
+
+
+
+Potential re run with 12-14 as intercapt?
+
+
+-----
+
+
+
+Now this is run again centered on 18-20: (use those weights)
+
+
+```{r}
+# -------------------------------
+# 0. Load Required Packages
+# -------------------------------
+if (!require("survey")) install.packages("survey")
+if (!require("broom")) install.packages("broom")
+if (!require("flextable")) install.packages("flextable")
+if (!require("officer")) install.packages("officer")
+library(survey)
+library(broom)
+library(flextable)
+library(officer)
+library(dplyr)
+
+# -------------------------------
+# 1. Define Age Levels and Weights
+# -------------------------------
+age_levels <- c("under_12", "12-14", "15-17", "18-20", "21-29", "30+")
+rep_weight_names <- paste0("VICREPWGT", 1:160)
+
+# -------------------------------
+# 2. Prepare Dataset
+# (Assumes 'age' is already constructed)
+# -------------------------------
+full_df <- ncvs_df %>%
+  filter(age %in% age_levels, social_crime %in% c("alone", "observed", "group")) %>%
+  filter(!is.na(incident_weight), incident_weight > 0, !is.na(VICREPWGT1)) %>%
+  mutate(
+    age_group = factor(age, levels = age_levels),
+    # Relevel so 18-20 is reference
+    age_group = relevel(age_group, ref = "18-20"),
+    is_alone = social_crime == "alone"
+  )
+
+# -------------------------------
+# 3. Create Survey Design (Fay’s BRR)
+# -------------------------------
+rep_design <- svrepdesign(
+  weights = ~incident_weight,
+  repweights = full_df %>% select(all_of(rep_weight_names)),
+  type = "Fay",
+  rho = 0.3,
+  combined.weights = TRUE,
+  data = full_df,
+  mse = TRUE
+)
+
+# -------------------------------
+# 4. Logistic Regression: Alone ~ Age Group
+# -------------------------------
+options(survey.replicates.mse = TRUE)
+
+model <- svyglm(is_alone ~ age_group, design = rep_design, family = binomial())
+
+# -------------------------------
+# 5. Tidy and Format Output
+# -------------------------------
+model_output <- tidy(model, conf.int = TRUE, exponentiate = TRUE) %>%
+  mutate(term = ifelse(term == "(Intercept)", "Intercept (18–20)", term)) %>%
+  mutate(across(where(is.numeric), ~ round(., 2))) %>%
+  rename(
+    `Age Group` = term,
+    `Odds Ratio` = estimate,
+    `Std. Error` = std.error,
+    `z` = statistic,
+    `p` = p.value,
+    `CI Lower` = conf.low,
+    `CI Upper` = conf.high
+  )
+
+# -------------------------------
+# 6. Create APA-style Flextable
+# -------------------------------
+ft <- flextable(model_output) |>
+  autofit() |>
+  theme_booktabs() |>
+  set_table_properties(layout = "autofit") |>
+  fontsize(size = 11, part = "all") |>
+  line_spacing(space = 1.15)
+
+# -------------------------------
+# 7. Save as Word Document
+# -------------------------------
+save_as_docx(
+  "Logistic Regression Results (Solo Offending by Age Group, Centered on 18–20)" = ft,
+  path = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/R_Tables/Centered18-20_logistic_regression_solo_offending.docx"
+)
+
+
+```
+
+
+```{r}
+
+
+```
+
+
+
+####building a figure (will comment out later?): 
+
+```{r}
+# Load libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(scales)
+
+# 1. Convert percentage strings to numeric, remove "Total" row
+df <- ncvs_calc_1_percentages %>%
+  filter(age_group != "Total") %>%
+  mutate(across(-age_group, ~ as.numeric(sub("%", "", .)) / 100))
+
+# 2. Normalize rows to sum to 1 exactly and calculate derived columns
+df <- df %>%
+  mutate(
+    age_group = factor(age_group, levels = c("under_12", "12-14", "15-17", "18-20", "21-29", "30+")),
+    row_sum = alone + observed + group,
+    alone = alone / row_sum,
+    observed = observed / row_sum,
+    group = group / row_sum,
+    social = group + observed,
+    age_index = as.numeric(age_group)
+  )
+
+# 3. Convert to long format and handle small/missing values
+df_long <- df %>%
+  pivot_longer(cols = c("observed", "group", "alone"),
+               names_to = "crime_type", values_to = "proportion") %>%
+  mutate(
+    proportion = suppressWarnings(as.numeric(proportion)),
+    proportion = case_when(
+      is.na(proportion)        ~ 0.001,
+      proportion < 0.001       ~ 0.001,
+      proportion > 1           ~ 0.999,
+      TRUE                     ~ proportion
+    ),
+    crime_type = factor(crime_type, levels = c("alone", "observed", "group")),
+    age_index = rep(df$age_index, each = 3)
+  )
+
+
+
+# 4. Define crime type colors
+crime_colors <- c(
+  "group"    = "#8FCB9B",
+  "observed" = "#88AEE0",
+  "alone"    = "#C6C6C6"
+)
+
+# 5. Plot
+ggplot(df_long, aes(x = age_index, y = proportion, fill = crime_type)) +
+  geom_bar(stat = "identity", aes(alpha = ifelse(crime_type == "alone", 0.6, 1)),
+           position = "stack", color = NA, width = 0.6) +
+  scale_fill_manual(values = crime_colors, name = "Crime Type") +
+  scale_alpha_identity() +
+  geom_line(data = df, aes(x = age_index, y = social), inherit.aes = FALSE, color = "black", linewidth = 0.8) +
+  geom_line(data = df, aes(x = age_index, y = group), inherit.aes = FALSE, color = "gray30", linewidth = 0.8) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  coord_cartesian(ylim = c(0, 1)) +
+  scale_x_continuous(breaks = df$age_index, labels = levels(df$age_group), name = "Age Group") +
+  labs(title = "Proportion of Crime Types by Age Group", y = "Proportion of Crimes") +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_line(color = "gray90"),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(size = 11),
+    axis.text.y = element_text(size = 11),
+    axis.title = element_text(size = 12),
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    legend.position = "top",
+    legend.title = element_blank(),
+    legend.text = element_text(size = 11)
+  )
+
+
+```

@@ -1,0 +1,14 @@
+# macOS system files
+.DS_Store
+**/.DS_Store
+
+# R history files
+.Rhistory
+
+# CSV data files
+*.csv
+
+# If you want to be more selective, you can target only subfolders:
+# originaldata-pull/**/*.csv
+# total/**/*.csv
+# *.csv

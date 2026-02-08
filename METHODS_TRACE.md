@@ -146,19 +146,49 @@ This is the heart of the APA Methods mapping.
 ---
 
 ## 5) Analysis pipeline entrypoints (where the actual manuscript results are generated)
-### 5.1 Main scoring notebooks to audit
-Unweighted:
-- `total/unweighted/ncvs_coofensecombined_scoring.Rmd`
 
-Weighted:
+### 5.1 Main scoring notebooks (weighted; manuscript-facing)
+Weighted TOTAL / THEFT / VIOLENT (parallel methods; different crime-type filters):
 - `total/weighted/weighted-ncvs_coofensecombined_scoring.Rmd`
 - `total/weighted/theft-weighted-ncvs_coofensecombined_scoring.Rmd`
 - `total/weighted/violent-weighted-ncvs_coofensecombined_scoring.Rmd`
 
-Co-offending:
-- `cooffending/total/coffend-ncvs_coofensecombined_scoring.Rmd`
+**What they do (high-level):**
+- Weighted descriptives by age group
+- Rao–Scott chi-square omnibus + pairwise (Bonferroni)
+- Weighted logistic regression (Fay’s BRR design; centered at 15–17 and 18–20)
 
-**TODO:** For each notebook, add:
+**Key output directories (docx/csv):**
+- TOTAL: `total/weighted/R_Tables/`
+- THEFT: `total/weighted/Theft_R_Tables/`
+- VIOLENT: `total/weighted/Violent_R_Tables/`
+
+### 5.2 Backup analysis notebook (weighted; “co-offending only = social”)
+TOTAL-only backup pipeline matching prior literature’s “co-offending only” framing:
+- `total/weighted/weighted-ncvs_cooffendingonly_scoring.Rmd`
+
+**Outputs:** `total/weighted/R_Tables_backup/`
+
+### 5.3 Supplemental robustness check (unweighted; no weights anywhere)
+To show the same general patterns hold without weighting, we run an unweighted version of the full analysis suite for 4 scopes:
+- total_main (alone/group/observed)
+- theft_main
+- violent_main
+- total_backup_cooffending_only
+
+**Runner script (single entrypoint):**
+- `supplemental/unweighted_run_all.R`
+
+**Outputs:** `supplemental/unweighted_outputs/<scope>/`
+- `*_SUPPLEMENT_unweighted.docx` (one bundled docx per scope)
+- CSV exports for descriptives, chi-square, and logit tables
+
+### 5.4 Unweighted notebooks (legacy / reference)
+- `total/unweighted/ncvs_coofensecombined_scoring.Rmd`
+- `total/unweighted/theft-violence-oldversions/theft-ncvs_coofensecombined_scoring.Rmd`
+- `total/unweighted/theft-violence-oldversions/violent-ncvs_coofensecombined_scoring.Rmd`
+
+**TODO (next pass):** For each analysis entrypoint above, add:
 - Inputs read (exact filenames)
 - Derived variables created
 - Statistical model/tests used

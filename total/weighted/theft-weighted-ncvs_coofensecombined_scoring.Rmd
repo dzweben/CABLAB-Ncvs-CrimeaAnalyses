@@ -9,7 +9,13 @@ output: html_document
 ################ Read in the CSV as a DF ##############################
 
 ```{r}
-ncvs_df <- read.csv("/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/theft-ncvs-merged-data-2014-2022.csv")  # read CSV into dataframe
+library(dplyr)
+library(survey)
+library(flextable)
+library(officer)
+
+# Project-relative input (portable)
+ncvs_df <- read.csv("theft-ncvs-merged-data-2014-2022.csv")  # read CSV into dataframe
 
 ```
 
@@ -266,7 +272,7 @@ apa_table <- flextable(ncvs_pairing_df) |>
 
 # Export CSV
 write.csv(ncvs_pairing_df,
-          file = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/Theft_R_Tables/cooffense_pairing_matrix.csv",
+          file = "total/weighted/Theft_R_Tables/cooffense_pairing_matrix.csv",
           row.names = FALSE)
 
 
@@ -414,7 +420,7 @@ ft <- flextable(ncvs_calc_1) |>
 # Step 8: Export to Word document
 save_as_docx(
   "Table X. Weighted Distribution of Crime Involvement by Age Group" = ft,
-  path = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/Theft_R_Tables/combinedco_ncvs_calc_1_table.docx"
+  path = "total/weighted/Theft_R_Tables/combinedco_ncvs_calc_1_table.docx"
 )
 
 
@@ -472,7 +478,7 @@ ft <- flextable(ncvs_calc_1_percentages) |>
 # Save to Word doc
 save_as_docx(
   "Table X. Proportion of Crime Types by Age Group (Weighted)" = ft,
-  path = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/Theft_R_Tables/combinedco-ncvs_percentages_table.docx"
+  path = "total/weighted/Theft_R_Tables/combinedco-ncvs_percentages_table.docx"
 )
 
 
@@ -596,7 +602,7 @@ ft <- flextable(final_table) |>
 # Save to Word
 save_as_docx(
   "Table X. Rao–Scott F-Adjusted Tests of Solo Crime Differences by Age Group" = ft,
-  path = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/Theft_R_Tables/combinedco-chi_squared_table.docx"
+  path = "total/weighted/Theft_R_Tables/combinedco-chi_squared_table.docx"
 )
 
 ```
@@ -697,7 +703,7 @@ ft <- flextable(model_output) |>
 # -------------------------------
 save_as_docx(
   "Logistic Regression Results (Solo Offending by Age Group)" = ft,
-  path = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/Theft_R_Tables/Combinedcof-15-17int-logistic_regression_solo_offending.docx"
+  path = "total/weighted/Theft_R_Tables/Combinedcof-15-17int-logistic_regression_solo_offending.docx"
 )
 
 
@@ -800,7 +806,7 @@ ft <- flextable(model_output) |>
 # -------------------------------
 save_as_docx(
   "Logistic Regression Results (Solo Offending by Age Group, Centered on 18–20)" = ft,
-  path = "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/total/weighted/Theft_R_Tables/Centered18-20_logistic_regression_solo_offending.docx"
+  path = "total/weighted/Theft_R_Tables/Centered18-20_logistic_regression_solo_offending.docx"
 )
 
 

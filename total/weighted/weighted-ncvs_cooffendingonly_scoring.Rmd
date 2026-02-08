@@ -1,0 +1,298 @@
+---
+title: "ncvs co-offending only backup (weighted total)"
+author: "Daniel Zweben + Saer"
+date: "2026-02-08"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(survey)
+library(flextable)
+library(officer)
+
+# Backup pipeline definition:
+# - social = co-offending / group crime ONLY
+# - solo = everything else (no separate 'observed/witness' category)
+```
+
+################ Read in the CSV as a DF ##############################
+
+```{r}
+# Project-relative input (portable)
+ncvs_df <- read.csv("ncvs-merged-data-2014-2022.csv")  # read CSV into dataframe
+
+```
+
+Remove negative "out of world from ncvs_df" weights
+```{r}
+# Clean base dataframe to exclude any invalid incident weights
+ncvs_df <- ncvs_df %>%
+  filter(!is.na(incident_weight), incident_weight > 0)
+
+```
+
+################ Trim whitespace + convert literal N/A to NA ##############################
+
+```{r}
+# Trim whitespace from all character columns
+ncvs_df[] <- lapply(ncvs_df, function(col) {
+  if (is.character(col)) trimws(col) else col
+})
+
+# convert "N/A" strings to NA
+ncvs_df[ncvs_df == "N/A"] <- NA
+
+```
+
+# ------------------------------------------------------------------------------
+# Age attribution for group crimes: duplicate rows to attribute incidents to
+# youngest and oldest offender age brackets when they differ.
+# ------------------------------------------------------------------------------
+
+```{r}
+# Ensure age columns are consistent character labels
+# (expected: under_12, 12-14, 15-17, 18-20, 21-29, 30+)
+
+# Normalize age labels to match the source data in the merged CSV
+normalize_age <- function(x) {
+  dplyr::case_when(
+    x %in% c("under_12", "Under 12") ~ "Under 12",
+    x %in% c("12-14", "12–14") ~ "12–14",
+    x %in% c("15-17", "15–17") ~ "15–17",
+    x %in% c("18-20", "18–20") ~ "18–20",
+    x %in% c("21-29", "21–29") ~ "21–29",
+    x == "30+" ~ "30+",
+    TRUE ~ as.character(x)
+  )
+}
+
+ncvs_df <- ncvs_df %>%
+  mutate(
+    age_solo = normalize_age(as.character(age_solo)),
+    youngest_multiple = normalize_age(as.character(youngest_multiple)),
+    oldest_multiple = normalize_age(as.character(oldest_multiple))
+  )
+
+# Identify solo vs group
+ncvs_df <- ncvs_df %>%
+  mutate(
+    solo_flag = solo_group_crime == "solo",
+    same_group_age = (!solo_flag) & !is.na(youngest_multiple) & (youngest_multiple == oldest_multiple),
+    two_group_ages = (!solo_flag) & !is.na(youngest_multiple) & !is.na(oldest_multiple) & (youngest_multiple != oldest_multiple)
+  )
+
+# Solo offenders
+solo_df <- ncvs_df %>%
+  filter(solo_flag) %>%
+  mutate(age = age_solo)
+
+# Group crimes with matching age groups
+same_age_df <- ncvs_df %>%
+  filter(!solo_flag & same_group_age) %>%
+  mutate(age = youngest_multiple)
+
+# Group crimes with different age groups — duplicate
+different_age_df <- ncvs_df %>%
+  filter(!solo_flag & two_group_ages)
+
+youngest_rows <- different_age_df %>% mutate(age = youngest_multiple)
+oldest_rows   <- different_age_df %>% mutate(age = oldest_multiple)
+
+# Combine all
+ncvs_df <- bind_rows(solo_df, same_age_df, youngest_rows, oldest_rows) %>%
+  select(-solo_flag, -same_group_age, -two_group_ages)
+
+```
+
+# ------------------------------------------------------------------------------
+# Backup categorization: co-offending-only social definition
+# ------------------------------------------------------------------------------
+
+```{r}
+# In this backup pipeline we do NOT use the original 'social_crime' variable from
+# the merged dataset (which includes an 'observed' category). We create a new one.
+
+ncvs_df <- ncvs_df %>%
+  mutate(
+    social_crime_backup = case_when(
+      solo_group_crime == "group" ~ "group",
+      solo_group_crime == "solo" ~ "alone",
+      TRUE ~ NA_character_
+    )
+  )
+
+```
+
+# ------------------------------------------------------------------------------
+# Weighted descriptives by age group (alone vs group)
+# ------------------------------------------------------------------------------
+
+```{r}
+age_levels <- c("Under 12", "12–14", "15–17", "18–20", "21–29", "30+")
+rep_weights <- paste0("VICREPWGT", 1:160)
+
+filtered_df <- ncvs_df %>%
+  filter(!is.na(VICREPWGT1)) %>%
+  filter(age %in% age_levels) %>%
+  mutate(
+    is_alone = social_crime_backup == "alone"
+  )
+
+rep_design <- svrepdesign(
+  weights = ~incident_weight,
+  repweights = filtered_df %>% select(all_of(rep_weights)),
+  type = "Fay",
+  rho = 0.3,
+  combined.weights = TRUE,
+  data = filtered_df,
+  mse = TRUE
+)
+
+weighted_total_by_age <- function(condition_expr, design, age_levels) {
+  design_sub <- subset(design, eval(condition_expr))
+  svytotal(~factor(age, levels = age_levels), design_sub) |> coef() |> as.numeric()
+}
+
+alone_counts <- weighted_total_by_age(quote(is_alone), rep_design, age_levels)
+group_counts <- weighted_total_by_age(quote(solo_group_crime == "group"), rep_design, age_levels)
+
+ncvs_calc_backup <- data.frame(
+  age_group = age_levels,
+  alone = round(alone_counts),
+  group = round(group_counts)
+)
+
+ncvs_calc_backup$grand_total <- rowSums(ncvs_calc_backup[, c("alone", "group")], na.rm = TRUE)
+
+# Percentages
+pct <- ncvs_calc_backup
+pct[, c("alone", "group")] <- round(100 * pct[, c("alone", "group")] / pct$grand_total, 2)
+
+# Save tables
+if (!dir.exists("total/weighted/R_Tables_backup")) dir.create("total/weighted/R_Tables_backup", recursive = TRUE)
+
+save_as_docx(
+  "Backup counts (alone vs group)" = flextable(ncvs_calc_backup),
+  path = "total/weighted/R_Tables_backup/backup_counts_alone_group.docx"
+)
+
+save_as_docx(
+  "Backup percentages (alone vs group)" = flextable(pct[, c("age_group","alone","group")]),
+  path = "total/weighted/R_Tables_backup/backup_percentages_alone_group.docx"
+)
+
+```
+
+# ------------------------------------------------------------------------------
+# Rao–Scott chi-square + pairwise tests (Bonferroni)
+# ------------------------------------------------------------------------------
+
+```{r}
+chi_df <- filtered_df %>%
+  filter(!is.na(age), solo_group_crime %in% c("solo", "group")) %>%
+  mutate(
+    is_solo = factor(ifelse(solo_group_crime == "solo", "Solo", "Group"), levels = c("Group","Solo")),
+    age = factor(age, levels = age_levels)
+  )
+
+rep_design_chi <- svrepdesign(
+  weights = ~incident_weight,
+  repweights = chi_df %>% select(all_of(rep_weights)),
+  type = "Fay",
+  rho = 0.3,
+  combined.weights = TRUE,
+  data = chi_df,
+  mse = TRUE
+)
+
+# Omnibus
+rs_test <- svychisq(~is_solo + age, design = rep_design_chi, statistic = "F")
+
+# Pairwise comparisons across age groups (same style as main pipeline)
+age_pairs <- combn(age_levels, 2, simplify = FALSE)
+
+pairwise_results <- lapply(age_pairs, function(pair) {
+  sub <- subset(rep_design_chi, age %in% pair)
+  stat <- svychisq(~is_solo + age, sub, statistic = "F")
+  data.frame(
+    group1 = pair[1],
+    group2 = pair[2],
+    F = unname(stat$statistic),
+    df1 = unname(stat$parameter[1]),
+    df2 = unname(stat$parameter[2]),
+    p_raw = unname(stat$p.value)
+  )
+})
+
+pairwise_df <- do.call(rbind, pairwise_results)
+
+# Bonferroni across all pairwise age comparisons
+m <- nrow(pairwise_df)
+pairwise_df$p_bonf <- pmin(pairwise_df$p_raw * m, 1)
+
+# Save
+save_as_docx(
+  "Rao–Scott omnibus" = flextable(data.frame(F=unname(rs_test$statistic), df1=unname(rs_test$parameter[1]), df2=unname(rs_test$parameter[2]), p=unname(rs_test$p.value))),
+  "Pairwise (Bonferroni)" = flextable(pairwise_df),
+  path = "total/weighted/R_Tables_backup/backup_rao_scott_chi_square.docx"
+)
+
+```
+
+# ------------------------------------------------------------------------------
+# Weighted logistic regression (centered at 15–17, then 18–20)
+# Outcome: is_alone (alone vs group)
+# ------------------------------------------------------------------------------
+
+```{r}
+logit_df <- filtered_df %>%
+  mutate(
+    age_group = factor(age, levels = age_levels),
+    is_alone = social_crime_backup == "alone"
+  )
+
+rep_design_logit <- svrepdesign(
+  weights = ~incident_weight,
+  repweights = logit_df %>% select(all_of(rep_weights)),
+  type = "Fay",
+  rho = 0.3,
+  combined.weights = TRUE,
+  data = logit_df,
+  mse = TRUE
+)
+
+# Center 15–17
+logit_df$age_group <- relevel(logit_df$age_group, ref = "15–17")
+rep_design_logit <- update(rep_design_logit, age_group = logit_df$age_group, is_alone = logit_df$is_alone)
+model_1517 <- svyglm(is_alone ~ age_group, design = rep_design_logit, family = binomial())
+
+# Center 18–20
+logit_df$age_group <- relevel(logit_df$age_group, ref = "18–20")
+rep_design_logit2 <- update(rep_design_logit, age_group = logit_df$age_group)
+model_1820 <- svyglm(is_alone ~ age_group, design = rep_design_logit2, family = binomial())
+
+# Save regression tables (tidy ORs)
+library(broom)
+
+or_tbl <- function(m) {
+  tt <- broom::tidy(m) %>%
+    mutate(
+      OR = exp(estimate),
+      OR_low = exp(estimate - 1.96*std.error),
+      OR_high = exp(estimate + 1.96*std.error)
+    )
+  tt
+}
+
+save_as_docx(
+  "Logit ORs (ref 15–17)" = flextable(or_tbl(model_1517)),
+  path = "total/weighted/R_Tables_backup/backup_logit_ref_15–17.docx"
+)
+
+save_as_docx(
+  "Logit ORs (ref 18–20)" = flextable(or_tbl(model_1820)),
+  path = "total/weighted/R_Tables_backup/backup_logit_ref_18–20.docx"
+)
+
+```

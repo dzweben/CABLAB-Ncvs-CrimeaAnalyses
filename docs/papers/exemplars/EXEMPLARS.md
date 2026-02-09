@@ -15,3 +15,4 @@ These papers are included to inform wording and reporting conventions (e.g., **O
 ## How we use these
 - Match the compact, standard Results style: effect estimate + CI (and p-value) in the same sentence.
 - Keep interpretation anchored in magnitude/precision rather than significance alone.
+- These are cited in `WRITEUP_Methods.md` / `WRITEUP_References.md` as examples of reporting conventions.

@@ -37,8 +37,16 @@ In survey-weighted logistic models with **15–17** as the reference category, o
 
 ## Backup analysis: total incidents with “social = co-offending only”
 
-When “social” was defined strictly as co-offending (group) rather than including the observed category, the substantive age pattern persisted. Under this backup definition, group offending was highest in **15–17 (31.78%)** and **18–20 (32.41%)**, intermediate in **Under 12 (27.14%)** and **12–14 (24.72%)**, and lowest in adulthood (21–29: **20.21%**; 30+: **12.05%**). This robustness check indicates that the adolescent/emerging-adult elevation in group offending is not an artifact of classifying observation/witnessing as “social.”
+### Descriptive patterns
+When “social” was defined strictly as co-offending (group) rather than including the observed category, the substantive age pattern persisted. Under this backup definition, group offending was highest in **15–17 (31.78%)** and **18–20 (32.41%)**, intermediate in **Under 12 (27.14%)** and **12–14 (24.72%)**, and lowest in adulthood (21–29: **20.21%**; 30+: **12.05%**).
+
+### Design-based test and logistic regression
+A design-based omnibus test indicated that age group was associated with the group-versus-solo distribution under this backup operationalization (Rao–Scott adjusted **F**(4.47) = **99.10**, p < .001).
+
+In survey-weighted logistic models using **15–17** as the reference category, **18–20** again showed very similar odds of solo offending (18–20 vs. 15–17: **OR = 0.97**, 95% CI [0.82, 1.16], p = .74), whereas adult groups had substantially higher odds of solo offending (21–29: **OR = 1.84**, 95% CI [1.58, 2.13], p < .001; 30+: **OR = 3.40**, 95% CI [2.88, 4.02], p < .001). Using **18–20** as the reference category, 15–17 remained similar (15–17 vs. 18–20: **OR = 1.03**, 95% CI [0.87, 1.22], p = .74), while adult groups again had higher odds (21–29: **OR = 1.89**, 95% CI [1.61, 2.23], p < .001; 30+: **OR = 3.50**, 95% CI [3.02, 4.05], p < .001).
+
+Together, these results indicate that the adolescent/emerging-adult elevation in group offending is not an artifact of classifying observation/witnessing as “social.”
 
 ## Supplemental (unweighted) robustness checks
 
-Unweighted supplemental analyses (standard chi-square tests and standard logistic regressions) were consistent with the primary weighted analyses in the **direction and overall pattern** of results across total, theft, violent, and the backup operationalization. Because the unweighted analytic sample is already large, these supplemental results underscore that the substantive conclusions are not dependent on the weighting/replicate-weight framework and that interpretation should remain centered on effect magnitudes and interval estimates rather than statistical significance alone.
+Unweighted supplemental analyses (standard chi-square tests and standard logistic regressions) were consistent with the primary weighted analyses in the **direction and overall pattern** of results across total, theft, violent, and the backup operationalization. Because the unweighted analytic sample is already large, these supplemental results underscore that the substantive conclusions are not dependent on the weighting/replicate-weight framework and that interpretation should remain centered on effect magnitudes and interval estimates rather than statistical significance alone. Full unweighted outputs are saved as bundled tables for each scope in `supplemental/unweighted_outputs/` (one `*_SUPPLEMENT_unweighted.docx` per scope).

@@ -1,7 +1,7 @@
 # Method
 
 ## Data source and study period
-Data were drawn from the National Crime Victimization Survey (NCVS) and aggregated across survey years 2014–2022. The NCVS is a nationally representative, stratified multistage household survey administered by the U.S. Census Bureau for the Bureau of Justice Statistics (BJS) that captures criminal victimization experiences, including incidents that may not be reported to police.
+Data were drawn from the National Crime Victimization Survey (NCVS) and aggregated across survey years 2014–2022. The NCVS is a nationally representative, stratified multistage household survey administered by the U.S. Census Bureau for the Bureau of Justice Statistics (BJS) that captures criminal victimization experiences, including incidents that may not be reported to police (BJS, 2024).
 
 ## Unit of analysis and analytic samples
 The unit of analysis for the present study was the incident. Incidents were classified into four analytic scopes: (a) **Total** (all incidents in the merged 2014–2022 analytic file), (b) **Theft**, (c) **Violent**, and (d) a **Total backup definition** used to evaluate robustness under an alternative operationalization of “social” offending (described below). For each scope, incidents were assigned to an offender age group based on the scoring rules implemented in the project notebooks (solo incidents were assigned the solo offender’s age; group incidents were duplicated and attributed to the youngest and oldest co-offender age brackets to preserve the intended “range” representation used by the original scoring pipeline).
@@ -18,7 +18,7 @@ To evaluate whether the substantive pattern of results depended on treating obse
 ## Statistical approach
 
 ### Weighted, design-based inference (primary analyses)
-Primary inferential analyses used NCVS incident weights and replicate weights to obtain design-consistent point estimates and variance estimates. Replicate-weight survey designs were created using **Fay’s balanced repeated replication (BRR)** with **160 replicate weights** (`VICREPWGT1`–`VICREPWGT160`) and Fay’s coefficient **\(\rho = .30\)**. All survey-weighted models were implemented in R using the `survey` package via `svrepdesign(..., type = "Fay", rho = 0.3, mse = TRUE)`.
+Primary inferential analyses used NCVS incident weights and replicate weights to obtain design-consistent point estimates and variance estimates. Replicate-weight survey designs were created using **Fay’s balanced repeated replication (BRR)** with **160 replicate weights** (`VICREPWGT1`–`VICREPWGT160`) and Fay’s coefficient **\(\rho = .30\)**. This approach aligns with NCVS documentation describing variance estimation options and the incident-/person-/household-level file structure used for official estimates (Couzens et al., 2014; Shook-Sa et al., 2014). All survey-weighted models were implemented in R using the `survey` package via `svrepdesign(..., type = "Fay", rho = 0.3, mse = TRUE)`.
 
 For categorical comparisons across age groups, we conducted design-based omnibus tests using Rao–Scott adjustments (reported as **F** statistics) and followed omnibus tests with pairwise comparisons using Bonferroni correction for familywise error control. For modeling the likelihood of solo offending, we fit survey-weighted logistic regression models (`svyglm(..., family = binomial())`) and reported **odds ratios (ORs)** with **95% confidence intervals**.
 

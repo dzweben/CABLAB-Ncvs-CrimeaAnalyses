@@ -3,9 +3,9 @@
 ## Total incidents (primary definition: solo vs. social; social = co-offending + observed)
 
 ### Descriptive patterns across age groups
-Across the total incident sample, the distribution of incident social context varied meaningfully by age group. Under the primary operationalization (social = **co-offending + observed**, with these two components reported separately), **co-offending constituted roughly one-third of incidents** in adolescence and early emerging adulthood (15–17: **32.6%**; 18–20: **33.2%**), whereas it was lower in early adolescence (12–14: **24.8%**) and declined further in adulthood (21–29: **21.1%**; 30+: **12.0%**). Conversely, the proportion of incidents categorized as **solo** increased steadily from adolescence into adulthood (e.g., 15–17: **42.7%**; 18–20: **46.4%**; 21–29: **57.3%**; 30+: **64.7%**). The **observed** category varied across age (e.g., 12–14: **32.2%**; 18–20: **20.4%**; 30+: **23.2%**).
+Across the total incident sample, the proportion of incidents classified as **social** (co-offending + observed) varied meaningfully by age group. Social incidents were most common in the youngest and adolescent age ranges and remained elevated into early emerging adulthood (e.g., Under 12: **52.5%**; 12–14: **57.0%**; 15–17: **57.3%**; 18–20: **53.6%**), before declining in adulthood (21–29: **42.6%**; 30+: **35.2%**). Conversely, the proportion categorized as **solo** increased steadily from adolescence into adulthood (e.g., 15–17: **42.7%**; 18–20: **46.4%**; 21–29: **57.3%**; 30+: **64.7%**).
 
-Aggregating across the two non-solo categories, the overall proportion of incidents that were **social** (co-offending + observed) remained elevated across adolescence and early emerging adulthood (e.g., 15–17: **57.3%**; 18–20: **53.6%**) and declined in adulthood (21–29: **42.6%**; 30+: **35.2%**).
+Within the social category, **co-offending** constituted roughly one-third of incidents in adolescence and early emerging adulthood (15–17: **32.6%**; 18–20: **33.2%**) and declined in adulthood (21–29: **21.1%**; 30+: **12.0%**), whereas the **observed** component varied across age (e.g., 12–14: **32.2%**; 18–20: **20.4%**; 30+: **23.2%**).
 
 ### Design-based tests and pairwise comparisons
 A design-based omnibus test indicated that age group was associated with the distribution of social context (Rao–Scott adjusted **F**(4.50) = **108.08**, p < .001). Pairwise comparisons (Bonferroni-adjusted) showed especially large differences between older adulthood (30+) and each younger group (all adjusted ps < .001). In contrast, several comparisons within the youngest and adjacent adolescent/emerging-adult groups were not statistically distinguishable after Bonferroni adjustment (e.g., 15–17 vs. 18–20: adjusted p = 1.00; Under 12 vs. 12–14: adjusted p = 1.00), consistent with the comparatively similar distributions in those adjacent age ranges.
@@ -20,7 +20,9 @@ Notably, the 18–20 and 15–17 comparisons were similar in magnitude and not s
 ## Theft incidents (primary definition: solo vs. social; social = co-offending + observed)
 
 ### Descriptive patterns across age groups
-In the theft-only scope, **co-offending** again peaked in adolescence and early emerging adulthood, with co-offending incidents comprising **34.3%** (15–17) and **33.2%** (18–20) of theft incidents. Co-offending declined in adulthood (21–29: **24.1%**; 30+: **17.4%**), whereas solo theft increased with age (15–17: **44.8%**; 18–20: **46.1%**; 21–29: **52.7%**; 30+: **60.6%**).
+In the theft-only scope, the primary contrast of interest was **solo vs. social** theft (social = co-offending + observed). Social theft remained elevated across early adolescence through emerging adulthood (e.g., 12–14: **57.7%**; 15–17: **55.2%**; 18–20: **53.9%**) and declined in adulthood (21–29: **47.3%**; 30+: **39.4%**). Conversely, solo theft increased with age (15–17: **44.8%**; 18–20: **46.1%**; 21–29: **52.7%**; 30+: **60.6%**).
+
+Within the social theft category, co-offending comprised about one-third of theft incidents in adolescence and early emerging adulthood (15–17: **34.3%**; 18–20: **33.2%**) and declined in adulthood (21–29: **24.1%**; 30+: **17.4%**), with the observed component accounting for the remaining social portion.
 
 ### Design-based tests and logistic regression
 A design-based omnibus test indicated age differences in theft social context (Rao–Scott adjusted **F**(4.59) = **29.00**, p < .001). Bonferroni-adjusted pairwise comparisons showed that differences were primarily driven by contrasts involving older adulthood (e.g., 15–17 vs. 30+: adjusted p < .001; 18–20 vs. 30+: adjusted p < .001), whereas comparisons among adjacent adolescent/emerging-adult groups were not distinguishable after correction (e.g., 15–17 vs. 18–20: adjusted p = 1.00).
@@ -30,7 +32,9 @@ Survey-weighted logistic models told the same story in effect-size terms. Using 
 ## Violent incidents (primary definition: solo vs. social; social = co-offending + observed)
 
 ### Descriptive patterns across age groups
-In the violent-only scope, the age pattern was similar but more pronounced: **co-offending** constituted **32.0%** (15–17) and **33.2%** (18–20) of violent incidents, compared with **23.5%** in 12–14 and **10.7%** in 30+. Solo violence increased sharply in adulthood (21–29: **59.0%**; 30+: **65.8%**), while observed violence was highest in early adolescence (12–14: **33.5%**).
+In the violent-only scope, the primary contrast of interest was **solo vs. social** violence (social = co-offending + observed). Social violence remained high across early adolescence through emerging adulthood (e.g., Under 12: **52.6%**; 12–14: **57.0%**; 15–17: **58.0%**; 18–20: **53.4%**) and then declined sharply in adulthood (21–29: **40.9%**; 30+: **34.2%**). Conversely, solo violence increased sharply in adulthood (21–29: **59.0%**; 30+: **65.8%**).
+
+Within the social violence category, co-offending accounted for about one-third of violent incidents in mid-adolescence and emerging adulthood (15–17: **32.0%**; 18–20: **33.2%**) and was lower in early adolescence (12–14: **23.5%**) and older adulthood (30+: **10.7%**). The observed component was especially prominent in early adolescence (12–14: **33.5%**).
 
 ### Design-based tests and logistic regression
 A design-based omnibus test indicated age differences in violent-incident social context (Rao–Scott adjusted **F**(4.46) = **83.88**, p < .001). Pairwise contrasts again showed especially strong differences between 30+ and younger groups (all adjusted ps < .001), while 15–17 and 18–20 were not distinguishable after correction (adjusted p = 1.00).

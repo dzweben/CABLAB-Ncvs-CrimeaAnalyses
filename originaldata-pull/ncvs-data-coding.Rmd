@@ -9,8 +9,10 @@ library(dplyr)
 library(readr)
 
 years <- 2014:2022
-input_dir <- "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/originaldata-pull/raw-ncvs-data/"
-output_file <- "/Users/dannyzweben/Desktop/CABLAB_Files/ncvs/originaldata-pull/coded_data/ncvs_2014_2022_incident_full.csv"
+# Use project-root-relative paths.
+# When rendering non-interactively, set knit_root_dir to the repository root.
+input_dir <- file.path("originaldata-pull", "raw-ncvs-data")
+output_file <- file.path("originaldata-pull", "coded_data", "ncvs_2014_2022_incident_full.csv")
 
 get_var <- function(df, varname) {
   if (varname %in% names(df)) return(df[[varname]])
@@ -20,7 +22,7 @@ get_var <- function(df, varname) {
 all_data <- list()
 
 for (yr in years) {
-  file_path <- paste0(input_dir, yr, ".csv")
+  file_path <- file.path(input_dir, paste0(yr, ".csv"))
   if (!file.exists(file_path)) {
     message(paste("Missing file:", file_path))
     next
@@ -95,74 +97,81 @@ write_csv(final_df, output_file)
 
 
 ```{r}
+# Recode variables (protect against columns dropping if they are all-NA across years)
+recode_if_present <- function(df, var, ...) {
+  if (!var %in% names(df)) return(df)
+  df[[var]] <- dplyr::recode(df[[var]], ...)
+  df
+}
+
 final_df <- final_df %>%
-  mutate(
-    gender = recode(gender,
-                    `1` = "male",
-                    `2` = "female",
-                    `3` = NA_character_,
-                    `8` = NA_character_,
-                    `9` = NA_character_,
-                    .default = NA_character_),
+  {
+    . <- recode_if_present(., "gender",
+                          `1` = "male",
+                          `2` = "female",
+                          `3` = NA_character_,
+                          `8` = NA_character_,
+                          `9` = NA_character_,
+                          .default = NA_character_)
 
-    age_solo = recode(age_solo,
-                      `1` = "Under 12",
-                      `2` = "12–14",
-                      `3` = "15–17",
-                      `4` = "18–20",
-                      `5` = "21–29",
-                      `6` = "30+",
-                      `8` = NA_character_,
-                      `9` = NA_character_,
-                      .default = NA_character_),
+    . <- recode_if_present(., "age_solo",
+                          `1` = "Under 12",
+                          `2` = "12–14",
+                          `3` = "15–17",
+                          `4` = "18–20",
+                          `5` = "21–29",
+                          `6` = "30+",
+                          `8` = NA_character_,
+                          `9` = NA_character_,
+                          .default = NA_character_)
 
-    oldest_multiple = recode(oldest_multiple,
-                             `1` = "Under 12",
-                             `2` = "12–14",
-                             `3` = "15–17",
-                             `4` = "18–20",
-                             `5` = "21–29",
-                             `6` = "30+",
-                             `8` = NA_character_,
-                             `9` = NA_character_,
-                             .default = NA_character_),
+    . <- recode_if_present(., "oldest_multiple",
+                          `1` = "Under 12",
+                          `2` = "12–14",
+                          `3` = "15–17",
+                          `4` = "18–20",
+                          `5` = "21–29",
+                          `6` = "30+",
+                          `8` = NA_character_,
+                          `9` = NA_character_,
+                          .default = NA_character_)
 
-    youngest_multiple = recode(youngest_multiple,
-                               `1` = "Under 12",
-                               `2` = "12–14",
-                               `3` = "15–17",
-                               `4` = "18–20",
-                               `5` = "21–29",
-                               `6` = "30+",
-                               `8` = NA_character_,
-                               `9` = NA_character_,
-                               .default = NA_character_),
+    . <- recode_if_present(., "youngest_multiple",
+                          `1` = "Under 12",
+                          `2` = "12–14",
+                          `3` = "15–17",
+                          `4` = "18–20",
+                          `5` = "21–29",
+                          `6` = "30+",
+                          `8` = NA_character_,
+                          `9` = NA_character_,
+                          .default = NA_character_)
 
-    others_present = recode(others_present,
-                            `1` = "yes",
-                            `2` = "no",
-                            `3` = NA_character_,
-                            `8` = NA_character_,
-                            `9` = NA_character_,
-                            .default = NA_character_),
+    . <- recode_if_present(., "others_present",
+                          `1` = "yes",
+                          `2` = "no",
+                          `3` = NA_character_,
+                          `8` = NA_character_,
+                          `9` = NA_character_,
+                          .default = NA_character_)
 
-    others_help = recode(others_help,
-                         `1` = "yes",
-                         `2` = "no",
-                         `3` = NA_character_,
-                         `8` = NA_character_,
-                         `9` = NA_character_,
-                         .default = NA_character_),
+    . <- recode_if_present(., "others_help",
+                          `1` = "yes",
+                          `2` = "no",
+                          `3` = NA_character_,
+                          `8` = NA_character_,
+                          `9` = NA_character_,
+                          .default = NA_character_)
 
-    others_harm = recode(others_harm,
-                         `1` = "yes",
-                         `2` = "no",
-                         `3` = NA_character_,
-                         `8` = NA_character_,
-                         `9` = NA_character_,
-                         .default = NA_character_)
-  )
-
+    . <- recode_if_present(., "others_harm",
+                          `1` = "yes",
+                          `2` = "no",
+                          `3` = NA_character_,
+                          `8` = NA_character_,
+                          `9` = NA_character_,
+                          .default = NA_character_)
+    .
+  }
 
 ```
 
@@ -351,13 +360,11 @@ ncvs_violent <- final_df %>%
 
 
 ```{r}
-write.csv(final_df, "~/Desktop/CABLAB_Files/ncvs/originaldata-pull/coded_data/ncvs-merged-data-2014-2022.csv", row.names = FALSE)
-
-write.csv(final_df, "~/Desktop/CABLAB_Files/ncvs/ncvs-merged-data-2014-2022.csv", row.names = FALSE)
-
-write.csv(ncvs_theft, "~/Desktop/CABLAB_Files/ncvs/theft-ncvs-merged-data-2014-2022.csv", row.names = FALSE)
-
-write.csv(ncvs_violent, "~/Desktop/CABLAB_Files/ncvs/violent-ncvs-merged-data-2014-2022.csv", row.names = FALSE)
+# Write merged outputs to project paths (and optionally also to the repo root for convenience)
+write.csv(final_df, file.path("originaldata-pull", "coded_data", "ncvs-merged-data-2014-2022.csv"), row.names = FALSE)
+write.csv(final_df, file.path("ncvs-merged-data-2014-2022.csv"), row.names = FALSE)
+write.csv(ncvs_theft, file.path("theft-ncvs-merged-data-2014-2022.csv"), row.names = FALSE)
+write.csv(ncvs_violent, file.path("violent-ncvs-merged-data-2014-2022.csv"), row.names = FALSE)
 
 
 ```

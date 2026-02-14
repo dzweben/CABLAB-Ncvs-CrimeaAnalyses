@@ -50,6 +50,8 @@ Results are reported with an emphasis on **effect magnitudes** (e.g., difference
 
 # Results
 
+**Analytic note (survey weights and adjusted tests).** The NCVS uses a complex, multistage sampling design; as a result, unweighted analyses can yield biased descriptive estimates and standard errors that are too small. To obtain nationally representative point estimates and design-consistent variance estimates, we report survey-weighted descriptives and use replicate-weight methods (Fay’s BRR) for inference. For contingency-table tests, we report Rao–Scott adjusted statistics (reported as F) and use Bonferroni correction for the planned set of pairwise comparisons.
+
 ## Total incidents (primary definition: alone vs. group vs. observed)
 
 ### Descriptive patterns across age groups

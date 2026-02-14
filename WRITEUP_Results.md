@@ -59,17 +59,19 @@ A design-based omnibus test indicated age differences in violent-incident social
 
 In survey-weighted logistic models with **15–17** as the reference category, odds of solo offending were higher in adulthood (21–29: **OR = 1.99**, 95% CI [1.64, 2.40], p < .001; 30+: **OR = 2.65**, 95% CI [2.20, 3.20], p < .001), and the 18–20 vs. 15–17 contrast was not statistically significant at α = .05 (18–20 vs. 15–17: **OR = 1.20**, 95% CI [0.97, 1.49], p = .09). With **18–20** as the reference, 15–17 again showed similar odds (15–17 vs. 18–20: **OR = 0.83**, 95% CI [0.67, 1.03], p = .09), while adult groups had higher odds (21–29: **OR = 1.65**, 95% CI [1.42, 1.92], p < .001; 30+: **OR = 2.20**, 95% CI [1.88, 2.59], p < .001).
 
-## Backup analysis (co-offending only)
+## Co-offending analysis (conventional operationalization)
+
+In addition to the primary analyses based on the novel social-context measure (co-offending + observed), we examined the proportion of incidents involving **co-offending only**. This provides a parallel set of results using a commonly used definition of “social offending,” allowing the same survey-weighted methods to be applied under that framework.
 
 ### Descriptive patterns
-In a backup operationalization, we defined the social component strictly as **co-offending** (that is, we removed the observed category and treated all non-co-offending incidents as solo). Under this co-offending-only definition, co-offending was highest in **15–17 (31.78%)** and **18–20 (32.41%)**, intermediate in **Under 12 (27.14%)** and **12–14 (24.72%)**, and lowest in adulthood (21–29: **20.21%**; 30+: **12.05%**).
+Under the co-offending-only operationalization, co-offending was highest in **15–17 (31.78%)** and **18–20 (32.41%)**, intermediate in **Under 12 (27.14%)** and **12–14 (24.72%)**, and lower in adulthood (21–29: **20.21%**; 30+: **12.05%**).
 
-### Design-based test and logistic regression
-A design-based omnibus test indicated that age group was associated with the co-offending-versus-solo distribution under this backup operationalization (Rao–Scott adjusted **F**(4.47) = **99.10**, p < .001).
+### Rao–Scott test and logistic regression
+A survey-weighted omnibus test indicated that age group was associated with the co-offending-versus-solo distribution under the co-offending-only operationalization (Rao–Scott adjusted **F**(4.47) = **99.10**, p < .001).
 
 In survey-weighted logistic models using **15–17** as the reference category, the 18–20 vs. 15–17 contrast was not statistically significant (18–20 vs. 15–17: **OR = 0.97**, 95% CI [0.82, 1.16], p = .74), whereas adult groups had higher odds of solo offending (21–29: **OR = 1.84**, 95% CI [1.58, 2.13], p < .001; 30+: **OR = 3.40**, 95% CI [2.88, 4.02], p < .001). Using **18–20** as the reference category, 15–17 remained similar (15–17 vs. 18–20: **OR = 1.03**, 95% CI [0.87, 1.22], p = .74), while adult groups again had higher odds (21–29: **OR = 1.89**, 95% CI [1.61, 2.23], p < .001; 30+: **OR = 3.50**, 95% CI [3.02, 4.05], p < .001).
 
-Together, these results indicate that the adolescent/emerging-adult elevation in co-offending is not an artifact of classifying observation/witnessing as part of the primary social-crime definition.
+Together, these results indicate that the adolescent/emerging-adult elevation in co-offending is also present when sociality is defined strictly as co-offending.
 
 ## Supplemental (unweighted) robustness checks
 

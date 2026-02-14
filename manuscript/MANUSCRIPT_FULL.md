@@ -39,8 +39,8 @@ To directly evaluate whether ages **18–20** more closely resembled adjacent ad
 - THEFT: `total/weighted/theft-weighted-ncvs_coofensecombined_scoring.Rmd` → outputs in `total/weighted/Theft_R_Tables/`
 - VIOLENT: `total/weighted/violent-weighted-ncvs_coofensecombined_scoring.Rmd` → outputs in `total/weighted/Violent_R_Tables/`
 
-### Backup definition (weighted; “social = co-offending only”)
-A total-sample backup analysis was conducted using a two-category social-context variable (group vs. alone) to evaluate robustness under a “co-offending only” definition of social offending (`total/weighted/weighted-ncvs_cooffendingonly_scoring.Rmd` → `total/weighted/R_Tables_backup/`).
+### Co-offending analysis (weighted; conventional operationalization)
+In addition to the primary social-context measure (which incorporates co-offending and observation/witnessing), we conducted a parallel analysis using a conventional operationalization of “social offending” as **co-offending only**. This analysis used a two-category variable (group vs. alone) and applies the same survey-weighted methods to a commonly used framework to evaluate whether the adolescent elevation is also present when sociality is defined strictly as co-offending (`total/weighted/weighted-ncvs_cooffendingonly_scoring.Rmd` → `total/weighted/R_Tables_backup/`).
 
 ### Unweighted robustness checks (supplemental analyses)
 As a supplemental robustness check, we reran descriptives and inferential tests **without weights** (standard chi-square tests and standard logistic regression) for total, theft, violent, and the backup definition using a single runner script (`supplemental/unweighted_run_all.R` → `supplemental/unweighted_outputs/`). These analyses were intended to assess whether the direction and general pattern of results were consistent when analyses were conducted on the raw analytic sample.
@@ -93,10 +93,12 @@ Planned Bonferroni-adjusted pairwise comparisons (15 total; Appendix C, Table C3
 
 In survey-weighted logistic models with **15–17** as the reference category, odds of solo offending were substantially higher in adulthood (21–29: **OR = 1.99**, 95% CI [1.64, 2.40], p < .001; 30+: **OR = 2.65**, 95% CI [2.20, 3.20], p < .001), whereas 18–20 was similar to 15–17 (18–20 vs. 15–17: **OR = 1.20**, 95% CI [0.97, 1.49], p = .09). With **18–20** as the reference, 15–17 again showed similar odds (15–17 vs. 18–20: **OR = 0.83**, 95% CI [0.67, 1.03], p = .09), while adult groups had higher odds (21–29: **OR = 1.65**, 95% CI [1.42, 1.92], p < .001; 30+: **OR = 2.20**, 95% CI [1.88, 2.59], p < .001).
 
-## Backup analysis: total incidents with “social = co-offending only”
+## Co-offending analysis (conventional operationalization)
+
+In addition to the primary analyses based on the novel social-context measure (co-offending + observed), we examined the proportion of incidents involving **co-offending only**. This provides a parallel set of results using a commonly used definition of “social offending,” allowing the same survey-weighted methods to be applied under that framework.
 
 ### Descriptive patterns
-When “social” was defined strictly as co-offending (group) rather than including the observed category, the substantive age pattern persisted. Under this backup definition, group offending was highest in **15–17 (31.78%)** and **18–20 (32.41%)**, intermediate in **Under 12 (27.14%)** and **12–14 (24.72%)**, and lowest in adulthood (21–29: **20.21%**; 30+: **12.05%**).
+Under the co-offending-only operationalization, the proportion of incidents classified as co-offending (group) was highest in **15–17 (31.78%)** and **18–20 (32.41%)**, intermediate in **Under 12 (27.14%)** and **12–14 (24.72%)**, and lower in adulthood (21–29: **20.21%**; 30+: **12.05%**).
 
 ### Rao–Scott test and logistic regression
 A survey-weighted omnibus test indicated that age group was associated with the group-versus-solo distribution under the co-offending-only backup operationalization (Rao–Scott adjusted **F**(4.47) = **99.10**, p < .001). Descriptively, co-offending was highest in 15–17 (**31.78%**) and 18–20 (**32.41%**) and lower in adulthood (21–29 = **20.21%**, 30+ = **12.05%**), corresponding to differences of **+11.6 to +20.4 percentage points** when comparing 15–17/18–20 to adult groups.

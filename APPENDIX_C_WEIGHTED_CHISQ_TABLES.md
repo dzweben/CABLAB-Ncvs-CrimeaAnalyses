@@ -4,16 +4,15 @@ This appendix lists the full output tables corresponding to the design-based con
 
 **Primary operationalization (social = co-offending + observed; reported as social vs solo, with component breakdown available):**
 
-- **Table C1 (Total incidents):** Weighted distribution table and associated contingency-test output
+- **Table C1 (Total incidents):** Weighted distribution table and associated design-based contingency output (omnibus + Bonferroni-adjusted pairwise)
   - `total/weighted/R_Tables/combinedco-ncvs_percentages_table.docx`
   - `total/weighted/R_Tables/combinedco-chi_squared_table.docx`
-  - `total/weighted/R_Tables/rao_scott_chi_squared_pairwise.docx`
 
-- **Table C2 (Theft incidents):** Weighted distribution table and associated contingency-test output
+- **Table C2 (Theft incidents):** Weighted distribution table and associated design-based contingency output (omnibus + Bonferroni-adjusted pairwise)
   - `total/weighted/Theft_R_Tables/combinedco-ncvs_percentages_table.docx`
   - `total/weighted/Theft_R_Tables/combinedco-chi_squared_table.docx`
 
-- **Table C3 (Violent incidents):** Weighted distribution table and associated contingency-test output
+- **Table C3 (Violent incidents):** Weighted distribution table and associated design-based contingency output (omnibus + Bonferroni-adjusted pairwise)
   - `total/weighted/Violent_R_Tables/combinedco-ncvs_percentages_table.docx`
   - `total/weighted/Violent_R_Tables/combinedco-chi_squared_table.docx`
 

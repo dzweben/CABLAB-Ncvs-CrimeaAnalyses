@@ -1,266 +1,269 @@
 import React from 'react';
 import {
   ComposedChart,
-  BarChart,
-  Bar,
+  LineChart,
   Line,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell,
-  ScatterChart,
-  Scatter,
-  ReferenceLine,
 } from 'recharts';
-import {
-  Users,
-  Search,
-  BookOpen,
-  BarChart3,
-  MessageSquare,
-  Target,
-  User,
-} from 'lucide-react';
 
-const App = () => {
-  // Total incidents (primary definition)
-  const socialContextData = [
-    { age: 'Under 12', Alone: 47.6, Group: 27.5, Observed: 25.0 },
-    { age: '12–14', Alone: 42.9, Group: 24.8, Observed: 32.2 },
-    { age: '15–17', Alone: 42.7, Group: 32.6, Observed: 24.7 },
-    { age: '18–20', Alone: 46.4, Group: 33.2, Observed: 20.4 },
-    { age: '21–29', Alone: 57.3, Group: 21.1, Observed: 21.5 },
-    { age: '30+', Alone: 64.7, Group: 12.0, Observed: 23.2 },
-  ].map(d => ({ ...d, Social: +(d.Group + d.Observed).toFixed(1) }));
+// --------------------
+// Data (from manuscript tables)
+// --------------------
 
-  // Logistic regression (Total incidents; ref = 15–17)
-  const oddsRatioData = [
-    { age: 'Under 12', or: 1.22, low: 0.91, high: 1.63 },
-    { age: '12–14', or: 1.01, low: 0.79, high: 1.28 },
-    { age: '15–17', or: 1.0, low: 1.0, high: 1.0, isRef: true },
-    { age: '18–20', or: 1.16, low: 0.98, high: 1.37 },
-    { age: '21–29', or: 1.8, low: 1.56, high: 2.08 },
-    { age: '30+', or: 2.46, low: 2.11, high: 2.87 },
-  ];
+// Total incidents (primary definition: Alone / Group / Observed)
+const totalPrimary = [
+  { age: 'Under 12', Alone: 47.6, Group: 27.5, Observed: 25.0 },
+  { age: '12–14', Alone: 42.9, Group: 24.8, Observed: 32.2 },
+  { age: '15–17', Alone: 42.7, Group: 32.6, Observed: 24.7 },
+  { age: '18–20', Alone: 46.4, Group: 33.2, Observed: 20.4 },
+  { age: '21–29', Alone: 57.3, Group: 21.1, Observed: 21.5 },
+  { age: '30+', Alone: 64.7, Group: 12.0, Observed: 23.2 },
+].map(d => ({ ...d, Social: +(d.Group + d.Observed).toFixed(1) }));
 
-  const SectionHeader = ({ icon: Icon, title }) => (
-    <div className="bg-[#4a4a4a] text-white py-1 px-3 flex items-center gap-2 mb-3 rounded-sm uppercase tracking-wider font-bold text-sm">
-      <Icon size={16} />
-      <span>{title}</span>
+// Theft incidents (primary definition)
+const theftPrimary = [
+  { age: 'Under 12', Alone: 48.2, Group: 32.5, Observed: 19.3 },
+  { age: '12–14', Alone: 42.3, Group: 31.6, Observed: 26.1 },
+  { age: '15–17', Alone: 44.8, Group: 34.3, Observed: 20.9 },
+  { age: '18–20', Alone: 46.1, Group: 33.2, Observed: 20.7 },
+  { age: '21–29', Alone: 52.7, Group: 24.1, Observed: 23.2 },
+  { age: '30+', Alone: 60.6, Group: 17.4, Observed: 22.0 },
+].map(d => ({ ...d, Social: +(d.Group + d.Observed).toFixed(1) }));
+
+// Violent incidents (primary definition)
+const violentPrimary = [
+  { age: 'Under 12', Alone: 47.3, Group: 25.7, Observed: 26.9 },
+  { age: '12–14', Alone: 43.1, Group: 23.5, Observed: 33.5 },
+  { age: '15–17', Alone: 42.0, Group: 32.0, Observed: 26.0 },
+  { age: '18–20', Alone: 46.6, Group: 33.2, Observed: 20.2 },
+  { age: '21–29', Alone: 59.0, Group: 20.0, Observed: 20.9 },
+  { age: '30+', Alone: 65.8, Group: 10.7, Observed: 23.5 },
+].map(d => ({ ...d, Social: +(d.Group + d.Observed).toFixed(1) }));
+
+// --------------------
+// Styling helpers
+// --------------------
+
+const H = ({ children }) => (
+  <div className="bg-[#4a4a4a] text-white py-1 px-3 mb-3 rounded-sm uppercase tracking-wider font-bold text-sm">
+    {children}
+  </div>
+);
+
+const Panel = ({ title, children }) => (
+  <div className="bg-white border border-gray-200 rounded shadow-sm">
+    <div className="px-4 py-2 border-b border-gray-200">
+      <div className="text-xs font-extrabold uppercase tracking-wider text-[#9d2235]">{title}</div>
     </div>
-  );
+    <div className="p-4">{children}</div>
+  </div>
+);
 
-  return (
-    <div className="min-h-screen bg-gray-100 p-8 flex justify-center">
-      <div className="bg-white shadow-2xl w-full max-w-[1200px] border border-gray-300 flex flex-col p-6 font-sans text-[#333]">
-        {/* Header */}
-        <div className="flex justify-between items-start border-b-4 border-[#9d2235] pb-4 mb-6">
-          <div className="flex items-center gap-4">
-            <div className="bg-[#9d2235] text-white p-3 font-bold text-2xl flex items-center justify-center rounded">
-              T
-            </div>
-            <div>
-              <h1 className="text-2xl font-black text-[#9d2235] leading-tight uppercase">
-                Social Context of Incidents Across Age: NCVS Survey-Weighted Analyses (2014–2022)
-              </h1>
-              <p className="text-lg font-bold text-gray-700 mt-1">Danny Zweben | Temple University</p>
-            </div>
-          </div>
-          <div className="text-right flex flex-col items-end">
-            <div className="bg-[#4a4a4a] text-white px-4 py-2 font-bold flex items-center gap-2 rounded">
-              <Users size={20} />
-              <span>CAB LAB</span>
-            </div>
-            <p className="text-xs mt-1 text-gray-500 font-semibold uppercase tracking-widest">
-              Cognitive & Behavioral Lab
-            </p>
-          </div>
+const BigNumber = ({ value, label, sub }) => (
+  <div className="text-center p-3 border-2 border-[#9d2235] rounded-lg">
+    <div className="text-4xl font-black text-[#9d2235] leading-none">{value}</div>
+    <div className="text-[11px] font-bold uppercase mt-1">{label}</div>
+    {sub ? <div className="text-[10px] text-gray-500 mt-1">{sub}</div> : null}
+  </div>
+);
+
+const SocialFigure = ({ data, title }) => (
+  <div>
+    <div className="text-[11px] font-bold uppercase text-gray-500 mb-2 text-center">{title}</div>
+    <div className="h-72">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="age" tick={{ fontSize: 10 }} />
+          <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
+          <Tooltip contentStyle={{ fontSize: '10px' }} />
+          <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
+
+          {/* stacked bars */}
+          <Bar dataKey="Alone" stackId="a" fill="#d1d5db" name="Alone" />
+          <Bar dataKey="Observed" stackId="a" fill="#6b7280" name="Observed" />
+          <Bar dataKey="Group" stackId="a" fill="#9d2235" name="Co-offending (Group)" />
+
+          {/* Social line (headline construct) */}
+          <Line type="monotone" dataKey="Social" stroke="#111827" strokeWidth={2.5} dot={{ r: 3 }} name="Social (Group+Observed)" />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+);
+
+const SmallSocialLine = ({ data, title }) => (
+  <div className="bg-white border border-gray-200 rounded p-3">
+    <div className="text-[10px] font-extrabold uppercase text-gray-600 mb-2">{title}</div>
+    <div className="h-36">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="age" tick={{ fontSize: 9 }} />
+          <YAxis domain={[30, 70]} tick={{ fontSize: 9 }} />
+          <Tooltip contentStyle={{ fontSize: '10px' }} />
+          <Line type="monotone" dataKey="Social" stroke="#9d2235" strokeWidth={2} dot={{ r: 2 }} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+);
+
+// --------------------
+// Pages
+// --------------------
+
+const Page1 = () => (
+  <div className="bg-white shadow-2xl w-full max-w-[1200px] border border-gray-300 flex flex-col p-6">
+    {/* Header */}
+    <div className="flex justify-between items-start border-b-4 border-[#9d2235] pb-4 mb-6">
+      <div>
+        <h1 className="text-2xl font-black text-[#9d2235] leading-tight uppercase">
+          Social context of incidents across age: NCVS survey-weighted analyses (2014–2022)
+        </h1>
+        <p className="text-lg font-bold text-gray-700 mt-1">Danny Zweben | Temple University</p>
+      </div>
+      <div className="text-right">
+        <div className="bg-[#4a4a4a] text-white px-4 py-2 font-bold rounded">CAB LAB</div>
+        <p className="text-xs mt-1 text-gray-500 font-semibold uppercase tracking-widest">Cognitive & Behavioral Lab</p>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-12 gap-6 flex-grow">
+      {/* Left column */}
+      <div className="col-span-4 flex flex-col gap-6">
+        <div className="bg-gray-50 p-4 border-l-4 border-[#9d2235] rounded-r">
+          <H>Primary question</H>
+          <p className="text-sm font-semibold text-gray-900 leading-relaxed">
+            Are incidents more likely to occur in a <span className="font-bold">social context</span> during adolescence than adulthood?
+          </p>
+          <p className="text-xs text-gray-700 mt-2">
+            <span className="font-bold">Secondary:</span> Do ages <span className="font-bold">18–20</span> resemble teens (15–17) or older adults?
+          </p>
         </div>
 
-        {/* Main 3-column content */}
-        <div className="grid grid-cols-12 gap-6 flex-grow">
-          {/* Column 1 */}
-          <div className="col-span-3 flex flex-col gap-6">
-            <div className="bg-gray-50 p-4 border-l-4 border-[#9d2235] rounded-r shadow-sm">
-              <SectionHeader icon={Search} title="Research Question" />
-              <p className="text-sm italic font-medium text-gray-800 leading-relaxed mb-2">
-                “Do incidents occurring in a social context remain elevated in ages 18–20 relative to adulthood?”
-              </p>
-              <ul className="list-disc ml-4 text-xs space-y-2 text-gray-700">
-                <li>Primary social context: Social = Co-offending + Observed vs. Alone.</li>
-                <li>Conventional check: Social = Co-offending only.</li>
-                <li>Scopes: Total, Theft/property, Violent/nonfatal personal (not shown here).</li>
-              </ul>
-            </div>
+        <Panel title="Data & approach (brief)">
+          <ul className="list-disc ml-4 text-xs space-y-2 text-gray-700">
+            <li><span className="font-bold">Data:</span> NCVS 2014–2022; incident-level records.</li>
+            <li><span className="font-bold">Scopes:</span> Total; Theft/property; Violent/nonfatal personal.</li>
+            <li><span className="font-bold">Primary social context:</span> Social = Co-offending + Observed vs Alone.</li>
+            <li><span className="font-bold">Observed:</span> derived category for solo incidents with others present who did not help.</li>
+            <li><span className="font-bold">Inference:</span> survey weights + replicate weights (Fay BRR); Rao–Scott + planned Bonferroni pairwise; survey-weighted logistic regression.</li>
+          </ul>
+        </Panel>
 
-            <div className="p-2">
-              <SectionHeader icon={BookOpen} title="Method" />
-              <div className="space-y-3 text-xs text-gray-700">
-                <div>
-                  <p className="font-bold text-[#9d2235] mb-1">Data Source</p>
-                  <p>
-                    National Crime Victimization Survey (NCVS), 2014–2022; nationally representative stratified multistage survey.
-                  </p>
-                </div>
-                <div>
-                  <p className="font-bold text-[#9d2235] mb-1">Dataset</p>
-                  <p>
-                    Incident-level records (each record = one victimization incident). Incidents classified into Total, Theft/property,
-                    and Violent/nonfatal personal scopes.
-                  </p>
-                </div>
-                <div>
-                  <p className="font-bold text-[#9d2235] mb-1">Operationalization</p>
-                  <p>
-                    <span className="font-semibold">Group</span> = co-offending; <span className="font-semibold">Observed</span> = solo incidents
-                    with others present who did not help (derived); <span className="font-semibold">Alone</span> = remaining solo incidents.
-                  </p>
-                </div>
-                <div>
-                  <p className="font-bold text-[#9d2235] mb-1">Statistical Approach</p>
-                  <p>
-                    Survey weights + replicate weights (Fay’s BRR). Rao–Scott adjusted omnibus tests with planned Bonferroni pairwise
-                    comparisons; survey-weighted logistic regression for odds of solo offending.
-                  </p>
-                </div>
-              </div>
-            </div>
+        <Panel title="Key planned contrasts (Total; primary)">
+          <ul className="list-disc ml-4 text-xs space-y-2 text-gray-700">
+            <li>15–17 vs 18–20: adj p = 1.00 (ns), Δ = 3.7 points (Social).</li>
+            <li>15–17 vs 21–29: adj p &lt; .001, Δ = 14.6 points.</li>
+            <li>15–17 vs 30+: adj p &lt; .001, Δ = 22.0 points.</li>
+          </ul>
+        </Panel>
+      </div>
+
+      {/* Middle column */}
+      <div className="col-span-5">
+        <H>Results (Total incidents; primary definition)</H>
+        <SocialFigure data={totalPrimary} title="Social context distribution (%) with Social = Group + Observed" />
+      </div>
+
+      {/* Right column */}
+      <div className="col-span-3 flex flex-col gap-6">
+        <Panel title="Effect-size headline (Total; primary)">
+          <BigNumber value="Δ = +22.0" label="Social (15–17) − Social (30+)" sub="57.3% vs 35.3%" />
+        </Panel>
+
+        <Panel title="Secondary adjacency check">
+          <div className="text-xs text-gray-700 leading-relaxed">
+            15–17 vs 18–20 differences are small relative to teen–adult contrasts.
           </div>
-
-          {/* Column 2 */}
-          <div className="col-span-6 border-x border-gray-200 px-4">
-            <SectionHeader icon={BarChart3} title="Results (Total incidents; primary definition)" />
-
-            <div className="mb-6">
-              <p className="text-xs font-bold uppercase text-gray-500 mb-2 text-center">
-                Social context distribution (%) with Social = Group + Observed
-              </p>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={socialContextData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="age" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-                    <Tooltip contentStyle={{ fontSize: '10px' }} />
-                    <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
-
-                    {/* Make Social visually salient: Group strongest */}
-                    <Bar dataKey="Alone" stackId="a" fill="#d1d5db" name="Alone" />
-                    <Bar dataKey="Observed" stackId="a" fill="#6b7280" name="Observed" />
-                    <Bar dataKey="Group" stackId="a" fill="#9d2235" name="Co-offending (Group)" />
-
-                    <Line type="monotone" dataKey="Social" stroke="#111827" strokeWidth={2} dot={{ r: 3 }} name="Social (Group+Observed)" />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="text-[10px] text-gray-500 mt-2 italic text-center">
-                Social involvement is higher in adolescence and ages 18–20 than in adulthood.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 p-3 rounded border border-gray-200">
-                <p className="text-[10px] font-bold text-center mb-2 text-[#9d2235] uppercase">
-                  Odds of Solo Offending (ORs)
-                </p>
-                <p className="text-[9px] text-center text-gray-500 mb-1">(Ref: 15–17 years)</p>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis type="number" dataKey="or" domain={[0.5, 3]} tick={{ fontSize: 8 }} />
-                      <YAxis type="category" dataKey="age" tick={{ fontSize: 8 }} width={70} />
-                      <ReferenceLine x={1} stroke="#9d2235" strokeDasharray="3 3" />
-                      <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                      <Scatter name="Odds Ratio" data={oddsRatioData}>
-                        {oddsRatioData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.isRef ? '#9d2235' : '#4a4a4a'} />
-                        ))}
-                      </Scatter>
-                    </ScatterChart>
-                  </ResponsiveContainer>
-                </div>
-                <p className="text-[9px] text-gray-400 text-center">95% CIs shown in tables</p>
-              </div>
-
-              <div className="flex flex-col justify-center gap-4">
-                <div className="text-center p-3 border-2 border-[#9d2235] rounded-lg">
-                  <p className="text-3xl font-black text-[#9d2235]">1.16</p>
-                  <p className="text-[10px] font-bold uppercase">OR for 18–20 vs 15–17</p>
-                  <p className="text-[9px] text-gray-500 mt-1">p = .08 (ns)</p>
-                </div>
-                <div className="text-center p-3 bg-[#4a4a4a] text-white rounded-lg">
-                  <p className="text-3xl font-black">2.46</p>
-                  <p className="text-[10px] font-bold uppercase">OR for 30+ vs 15–17</p>
-                  <p className="text-[9px] text-gray-300 mt-1">p &lt; .001</p>
-                </div>
-              </div>
-            </div>
+          <div className="mt-3 grid grid-cols-1 gap-3">
+            <BigNumber value="1.16" label="OR (18–20 vs 15–17)" sub="p = .08 (ns)" />
           </div>
+        </Panel>
 
-          {/* Column 3 */}
-          <div className="col-span-3 flex flex-col gap-6">
-            <div className="bg-white p-2">
-              <p className="text-xs font-bold text-[#9d2235] border-b border-[#9d2235] mb-2 pb-1">
-                Rao–Scott Omnibus (Total)
-              </p>
-              <div className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                <div className="text-center">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase">F</p>
-                  <p className="text-lg font-bold text-gray-800">108.08</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase">p</p>
-                  <p className="text-lg font-bold text-[#9d2235]">&lt; .001</p>
-                </div>
-              </div>
-            </div>
+        <Panel title="Takeaways">
+          <ul className="list-disc ml-4 text-xs space-y-2 text-gray-700">
+            <li>Social involvement is higher in adolescence and ages 18–20 than in adulthood.</li>
+            <li>Teen–adult differences are large in magnitude (Δ points) across outcomes.</li>
+          </ul>
+        </Panel>
+      </div>
+    </div>
 
-            <div className="bg-gray-50 p-4 border border-gray-200 rounded shadow-sm">
-              <p className="text-xs font-bold text-[#9d2235] mb-2 uppercase">Planned pairwise (Bonferroni)</p>
-              <ul className="list-disc ml-4 text-xs space-y-2 text-gray-700">
-                <li>15–17 vs 18–20: adj p = 1.00 (ns), Δ = 3.7 points (Social).</li>
-                <li>15–17 vs 21–29: adj p &lt; .001, Δ = 14.6 points.</li>
-                <li>15–17 vs 30+: adj p &lt; .001, Δ = 22.0 points.</li>
-              </ul>
-            </div>
+    <div className="mt-6 pt-4 border-t-4 border-[#9d2235] flex justify-between items-center">
+      <p className="text-xs font-bold text-gray-600 uppercase">NCVS incident analyses (survey-weighted)</p>
+      <div className="text-gray-400 text-xs">CABLAB</div>
+    </div>
+  </div>
+);
 
-            <div>
-              <SectionHeader icon={MessageSquare} title="Takeaways" />
-              <div className="space-y-3 text-xs text-gray-700 leading-relaxed">
-                <p>
-                  <span className="font-bold text-[#9d2235]">Pattern:</span> Social involvement is higher in adolescence and ages 18–20 than in adulthood.
-                </p>
-                <p>
-                  <span className="font-bold text-[#9d2235]">Adjacency:</span> 15–17 and 18–20 are similar relative to teen–adult contrasts.
-                </p>
-                <p className="italic bg-yellow-50 p-2 rounded border border-yellow-200">
-                  Results were consistent when defining sociality as co-offending only.
-                </p>
-              </div>
-            </div>
+const Page2 = () => (
+  <div className="bg-white shadow-2xl w-full max-w-[1200px] border border-gray-300 flex flex-col p-6">
+    <div className="flex justify-between items-start border-b-4 border-[#9d2235] pb-4 mb-6">
+      <div>
+        <h2 className="text-xl font-black text-[#9d2235] leading-tight uppercase">Replication across scopes + robustness</h2>
+        <p className="text-sm font-semibold text-gray-700 mt-1">(Poster page 2)</p>
+      </div>
+      <div className="text-right">
+        <div className="bg-[#4a4a4a] text-white px-4 py-2 font-bold rounded">CAB LAB</div>
+      </div>
+    </div>
 
-            <div className="mt-auto pt-4 border-t border-gray-100">
-              <p className="text-[8px] text-gray-400">
-                Citations to be finalized. CABLAB • Temple University
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-6 pt-4 border-t-4 border-[#9d2235] flex justify-between items-center">
-          <p className="text-xs font-bold text-gray-600 uppercase">NCVS incident analyses (survey-weighted)</p>
-          <div className="flex gap-4 text-gray-400">
-            <Target size={14} />
-            <Users size={14} />
-            <User size={14} />
-          </div>
+    <div className="grid grid-cols-12 gap-6 flex-grow">
+      <div className="col-span-7">
+        <H>Small multiples: Social (%) by age</H>
+        <div className="grid grid-cols-1 gap-3">
+          <SmallSocialLine data={totalPrimary} title="Total incidents (primary)" />
+          <SmallSocialLine data={theftPrimary} title="Theft/property (primary)" />
+          <SmallSocialLine data={violentPrimary} title="Violent/nonfatal personal (primary)" />
         </div>
       </div>
+
+      <div className="col-span-5 flex flex-col gap-6">
+        <Panel title="Key teen–adult contrasts (Δ points; primary definition)">
+          <div className="text-xs text-gray-700 mb-3">
+            Poster focus: effect magnitudes (percentage-point differences) with planned inference.
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            <BigNumber value="Δ = +22.0" label="Total: 15–17 vs 30+" sub="Bonferroni: p &lt; .001" />
+            <BigNumber value="Δ = +15.8" label="Theft: 15–17 vs 30+" sub="Bonferroni: p &lt; .001" />
+            <BigNumber value="Δ = +23.8" label="Violent: 15–17 vs 30+" sub="Bonferroni: p &lt; .001" />
+          </div>
+        </Panel>
+
+        <Panel title="Co-offending-only (conventional) check">
+          <div className="text-xs text-gray-700 leading-relaxed">
+            Results were consistent when defining sociality as <span className="font-bold">co-offending only</span> (group vs alone).
+          </div>
+        </Panel>
+
+        <div className="text-[10px] text-gray-500">
+          Citations to be finalized. CABLAB • Temple University
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-6 pt-4 border-t-4 border-[#9d2235] flex justify-between items-center">
+      <p className="text-xs font-bold text-gray-600 uppercase">NCVS incident analyses (survey-weighted)</p>
+      <div className="text-gray-400 text-xs">CABLAB</div>
+    </div>
+  </div>
+);
+
+const App = () => {
+  return (
+    <div className="min-h-screen bg-gray-100 p-8 flex flex-col items-center gap-10">
+      <Page1 />
+      {/* page break for print */}
+      <div className="hidden print:block" style={{ pageBreakAfter: 'always' }} />
+      <Page2 />
     </div>
   );
 };

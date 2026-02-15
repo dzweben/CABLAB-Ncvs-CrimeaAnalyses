@@ -47,6 +47,15 @@ const violentPrimary = [
 ].map(d => ({ ...d, Social: +(d.Group + d.Observed).toFixed(1) }));
 
 // --------------------
+// Logistic regression (key telling comparisons; Total; ref = 15–17)
+// --------------------
+
+const totalLogitKey = [
+  { group: '18–20', or: 1.16, low: 0.98, high: 1.37 },
+  { group: '30+', or: 2.46, low: 2.11, high: 2.87 },
+];
+
+// --------------------
 // Styling helpers
 // --------------------
 
@@ -115,6 +124,53 @@ const SmallSocialLine = ({ data, title }) => (
   </div>
 );
 
+const ForestPlot = ({ data, title, min = 0.5, max = 3.0 }) => {
+  const pct = (x) => ((x - min) / (max - min)) * 100;
+  return (
+    <div className="bg-white border border-gray-200 rounded p-3">
+      <div className="text-[10px] font-extrabold uppercase text-gray-600 mb-2">{title}</div>
+
+      {/* scale */}
+      <div className="relative h-6 mb-2">
+        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-gray-200" />
+        {/* reference line at OR=1 */}
+        <div
+          className="absolute top-0 bottom-0 w-[2px] bg-[#9d2235]"
+          style={{ left: `${pct(1)}%` }}
+          title="OR = 1"
+        />
+        <div className="absolute -bottom-3 left-0 text-[9px] text-gray-400">{min}</div>
+        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[9px] text-gray-400">1</div>
+        <div className="absolute -bottom-3 right-0 text-[9px] text-gray-400">{max}</div>
+      </div>
+
+      <div className="space-y-3">
+        {data.map((d) => (
+          <div key={d.group} className="grid grid-cols-[52px_1fr] items-center gap-2">
+            <div className="text-[10px] font-bold text-gray-700">{d.group}</div>
+            <div className="relative h-4">
+              {/* CI */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 h-[2px] bg-gray-700"
+                style={{ left: `${pct(d.low)}%`, width: `${pct(d.high) - pct(d.low)}%` }}
+              />
+              {/* point */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 h-[8px] w-[8px] rounded-full bg-gray-900"
+                style={{ left: `calc(${pct(d.or)}% - 4px)` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="text-[9px] text-gray-500 mt-2">
+        ORs (with 95% CIs) from survey-weighted logistic regression (Total; ref = 15–17).
+      </div>
+    </div>
+  );
+};
+
 // --------------------
 // Pages
 // --------------------
@@ -179,13 +235,11 @@ const Page1 = () => (
           <BigNumber value="Δ = +22.0" label="Social (15–17) − Social (30+)" sub="57.3% vs 35.3%" />
         </Panel>
 
-        <Panel title="Secondary adjacency check">
-          <div className="text-xs text-gray-700 leading-relaxed">
-            15–17 vs 18–20 differences are small relative to teen–adult contrasts.
+        <Panel title="Logistic regression (key comparisons)">
+          <div className="text-xs text-gray-700 leading-relaxed mb-3">
+            Odds ratios for <span className="font-bold">solo offending</span> (Total; ref = 15–17).
           </div>
-          <div className="mt-3 grid grid-cols-1 gap-3">
-            <BigNumber value="1.16" label="OR (18–20 vs 15–17)" sub="p = .08 (ns)" />
-          </div>
+          <ForestPlot data={totalLogitKey} title="Telling comparisons" />
         </Panel>
 
         <Panel title="Takeaways">

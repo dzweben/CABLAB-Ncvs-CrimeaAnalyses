@@ -208,7 +208,7 @@ const Page2 = () => (
   <div className="bg-white shadow-2xl w-full max-w-[1200px] border border-gray-300 flex flex-col p-6">
     <div className="flex justify-between items-start border-b-4 border-[#9d2235] pb-4 mb-6">
       <div>
-        <h2 className="text-xl font-black text-[#9d2235] leading-tight uppercase">Replication across scopes + robustness</h2>
+        <h2 className="text-xl font-black text-[#9d2235] leading-tight uppercase">Replication across scopes</h2>
         <p className="text-sm font-semibold text-gray-700 mt-1">(Poster page 2)</p>
       </div>
       <div className="text-right">
@@ -218,18 +218,18 @@ const Page2 = () => (
 
     <div className="grid grid-cols-12 gap-6 flex-grow">
       <div className="col-span-7">
-        <H>Small multiples: Social (%) by age</H>
+        <H>Social (%) by age (primary definition)</H>
         <div className="grid grid-cols-1 gap-3">
-          <SmallSocialLine data={totalPrimary} title="Total incidents (primary)" />
-          <SmallSocialLine data={theftPrimary} title="Theft/property (primary)" />
-          <SmallSocialLine data={violentPrimary} title="Violent/nonfatal personal (primary)" />
+          <SmallSocialLine data={totalPrimary} title="Total incidents" />
+          <SmallSocialLine data={theftPrimary} title="Theft/property incidents" />
+          <SmallSocialLine data={violentPrimary} title="Violent/nonfatal personal incidents" />
         </div>
       </div>
 
       <div className="col-span-5 flex flex-col gap-6">
-        <Panel title="Key teen–adult contrasts (Δ points; primary definition)">
+        <Panel title="Key teen–adult contrasts (Δ points)">
           <div className="text-xs text-gray-700 mb-3">
-            Poster focus: effect magnitudes (percentage-point differences) with planned inference.
+            Effect magnitudes (percentage-point differences) for Social (Group+Observed).
           </div>
           <div className="grid grid-cols-1 gap-3">
             <BigNumber value="Δ = +22.0" label="Total: 15–17 vs 30+" sub="Bonferroni: p &lt; .001" />
@@ -238,9 +238,68 @@ const Page2 = () => (
           </div>
         </Panel>
 
-        <Panel title="Co-offending-only (conventional) check">
+        <Panel title="Conventional check">
           <div className="text-xs text-gray-700 leading-relaxed">
             Results were consistent when defining sociality as <span className="font-bold">co-offending only</span> (group vs alone).
+          </div>
+        </Panel>
+      </div>
+    </div>
+
+    <div className="mt-6 pt-4 border-t-4 border-[#9d2235] flex justify-between items-center">
+      <p className="text-xs font-bold text-gray-600 uppercase">NCVS incident analyses (survey-weighted)</p>
+      <div className="text-gray-400 text-xs">CABLAB</div>
+    </div>
+  </div>
+);
+
+const Page3 = () => (
+  <div className="bg-white shadow-2xl w-full max-w-[1200px] border border-gray-300 flex flex-col p-6">
+    <div className="flex justify-between items-start border-b-4 border-[#9d2235] pb-4 mb-6">
+      <div>
+        <h2 className="text-xl font-black text-[#9d2235] leading-tight uppercase">Overall pattern (what it means)</h2>
+        <p className="text-sm font-semibold text-gray-700 mt-1">(Poster page 3)</p>
+      </div>
+      <div className="text-right">
+        <div className="bg-[#4a4a4a] text-white px-4 py-2 font-bold rounded">CAB LAB</div>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-12 gap-6 flex-grow">
+      <div className="col-span-7">
+        <H>Overarching results</H>
+        <div className="grid grid-cols-1 gap-4">
+          <Panel title="Summary">
+            <div className="text-sm text-gray-800 leading-relaxed">
+              Across the NCVS incident data, incidents in adolescence and ages 18–20 are more likely to occur in a
+              <span className="font-bold"> social context</span> (co-offending and/or observed) than in adulthood.
+            </div>
+          </Panel>
+
+          <Panel title="How to read “Social”">
+            <ul className="list-disc ml-4 text-xs space-y-2 text-gray-700">
+              <li><span className="font-bold">Social</span> = <span className="font-bold">Group</span> (co-offending) + <span className="font-bold">Observed</span>.</li>
+              <li><span className="font-bold">Observed</span> is our derived category for solo incidents with others present who did not help.</li>
+              <li>Poster emphasis: <span className="font-bold">Δ points</span> and interval/model checks, not omnibus tests.</li>
+            </ul>
+          </Panel>
+        </div>
+      </div>
+
+      <div className="col-span-5 flex flex-col gap-6">
+        <Panel title="Three takeaways (poster-friendly)">
+          <ul className="list-disc ml-4 text-xs space-y-3 text-gray-700">
+            <li><span className="font-bold">Teen vs adult differences are large:</span> Total Δ(15–17 vs 30+) = +22.0 points.</li>
+            <li><span className="font-bold">Adjacency check:</span> 15–17 vs 18–20 differences are small relative to teen–adult gaps.</li>
+            <li><span className="font-bold">Robustness:</span> the pattern persists under co-offending-only sociality.</li>
+          </ul>
+        </Panel>
+
+        <Panel title="Key numbers (Total)">
+          <div className="grid grid-cols-1 gap-3">
+            <BigNumber value="57.3%" label="Social (15–17)" />
+            <BigNumber value="35.3%" label="Social (30+)" />
+            <BigNumber value="+22.0" label="Δ points (15–17 − 30+)" sub="Primary definition" />
           </div>
         </Panel>
 
@@ -261,9 +320,10 @@ const App = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-8 flex flex-col items-center gap-10">
       <Page1 />
-      {/* page break for print */}
       <div className="hidden print:block" style={{ pageBreakAfter: 'always' }} />
       <Page2 />
+      <div className="hidden print:block" style={{ pageBreakAfter: 'always' }} />
+      <Page3 />
     </div>
   );
 };

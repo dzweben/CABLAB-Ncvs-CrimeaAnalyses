@@ -1,14 +1,40 @@
-# macOS system files
+# === OS ===
 .DS_Store
 **/.DS_Store
+Thumbs.db
 
-# R history files
+# === R ===
 .Rhistory
+.RData
+.Rproj.user/
 
-# CSV data files
+# === Python ===
+__pycache__/
+*.pyc
+
+# === Data (ICPSR restricted-use; large CSVs) ===
+data/raw/*
+!data/raw/.gitkeep
+data/derived/*
+!data/derived/.gitkeep
 *.csv
+*.tsv
 
-# If you want to be more selective, you can target only subfolders:
-# originaldata-pull/**/*.csv
-# total/**/*.csv
-# *.csv
+# === Intermediate R tables (reproducible) ===
+outputs/tables/**/*.docx
+outputs/tables/**/*.csv
+
+# === Supplement outputs (reproducible) ===
+outputs/supplement/*
+!outputs/supplement/.gitkeep
+
+# === Large figure formats (keep PDFs, skip PNG/TIFF) ===
+outputs/figures/*.png
+outputs/figures/*.tiff
+!outputs/figures/.gitkeep
+
+# === Word temp files ===
+~$*
+
+# === Archive ===
+archive/
